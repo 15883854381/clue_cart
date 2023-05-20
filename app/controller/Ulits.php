@@ -1,0 +1,334 @@
+<?php
+
+namespace app\controller;
+
+use app\BaseController;
+
+use app\model\User as UserModel;
+
+use think\facade\Db;
+use think\facade\Log;
+use think\facade\Session;
+use think\facade\Request;
+use lunzi\TpSms;
+use think\exception\ValidateException;
+use WeChatPay\Formatter;
+use WpOrg\Requests\Requests as http;
+use think\cache\driver\Redis;
+use think\facade\Cache;
+
+//需要使用到的类
+use think\facade\Config;
+
+
+class Ulits extends BaseController
+{
+    protected $middleware = [\app\middleware\CheckToken::class];
+
+    /**
+     * 生成验证码
+     */
+    public function sendcode()
+    {
+
+        $request = Request::instance();
+        $post = $request->post();
+        // 发送验证码之前对 用户名和手机号码进行验证  == 开始
+        $dataArr = [
+            'phone_number' => $post['phone_number'],
+        ];
+
+        // 验证是否传入的手机号和用户名是否符合规则
+        $vili = self::Datavalidate($dataArr);
+        if ($vili !== true) {
+            return error(304, $vili, null);
+        }
+        // 发送验证码之前对 用户名和手机号码进行验证  == 结束
+        if (empty($post['phone_number'])) {
+            return success(300, '未填写手机号码', null);
+        }
+        $code = (new TpSms());
+        $code->mobile($post['phone_number']);
+        $stateCoded = $code->create();
+//        $res = self::platformCodeSend($stateCoded, $post['phone_number']);
+//        if ($res != 'success') {
+//            return $res;
+//        }
+        return success(200, '发送成功', $stateCoded);
+    }
+
+    /**
+     * 使用平台接口 发送验证码
+     * @param $code String 验证码
+     * @param $phone String 手机号码
+     * @return string|\think\response\Json
+     */
+    public function platformCodeSend($code, $phone)
+    {
+        $testConfig = \think\facade\Config::get('WeixinConfig');
+        $postArr = array(
+            'account' => $testConfig['Code']['account'],
+            'password' => $testConfig['Code']['password'],
+            'msg' => "【汽车线索互助联盟】您此次验证码为" . $code . "，5分钟内有效，请您尽快验证！",
+            'phone' => $phone,
+            'report' => true
+        );
+        $header = ['Content-Type' => 'application/json;charset=utf-8'];
+        $response = http::post('https://smssh1.253.com/msg/v1/send/json', $header, json_encode($postArr));
+        $data = json_decode($response->body, true);
+        if ($data['code'] != '0') {
+            return error($data['code'], $data['errorMsg'], null);
+        }
+        return 'success';
+    }
+
+
+    /**
+     * 验证验证码
+     */
+    public function getcode()
+    {
+        $request = Request::instance();
+        $post = $request->post();
+        $tpSms = new TpSms();
+        $tpSms->mobile($post['phone_number']);
+        $tpSms->code($post['code']);
+        if (!$tpSms->check()) {
+            return error(304, '验证码错误', $tpSms->getErrorMsg());
+        } else {
+            return success(200, '通过验证', null);
+        }
+    }
+
+
+//    验证手机号码
+    private function Datavalidate($dataArr)
+    {
+        // 验证数据是否为空 == 开始
+        try {
+            validate(
+                ['phone_number' => 'require|number|length:11'],
+                ['phone_number.require' => '请填写手机号码', 'phone_number.number' => '请正确填写手机号码', 'phone_number.length' => '请正确填写手机号码']
+            )->check($dataArr);
+
+            return true;
+        } catch (ValidateException $e) {
+            return $e->getMessage();
+        }
+        // 验证数据是否为空 == 结束
+    }
+
+    /**
+     * 获取城市数据
+     * @return \think\response\Json
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function city()
+    {
+        $t_province = Db::table('t_province')->field('id,name as text')->select()->toArray();
+        $t_city = Db::table('t_city')->field('id,name as text,province_id')->select()->toArray();
+        $i = 0;
+        foreach ($t_province as $item) {
+            $city = [];
+            foreach ($t_city as $it) {
+                if ($item['id'] == $it['province_id']) {
+                    $city[] = $it;
+                }
+            }
+            $t_province[$i]['children'] = $city;
+            $i++;
+        }
+        return success('200', '', $t_province);
+    }
+
+
+//    获取汽车品牌
+    public function CarBrand()
+    {
+        $Car_Brand = Db::table('t_car_brand')->field('id,name')->select();
+        return success('200', '', $Car_Brand);
+    }
+
+//    获取用户标签
+    public function userTags()
+    {
+        $Car_tags = Db::table('tags')->field("id,tagName as text")->where('sortid', 0)->select()->toArray();
+        $Car_tags_sub = Db::table('tags')->field("id,tagName as text,sortid")->where('sortid', '<>', 0)->select()->toArray();
+        $i = 0;
+        foreach ($Car_tags as $item) {
+            $tags = [];
+            foreach ($Car_tags_sub as $it) {
+                if ($it['sortid'] == $item['id']) {
+                    $tags[] = $it;
+                }
+            }
+            $Car_tags[$i]['children'] = $tags;
+            $i++;
+        }
+        return success('200', '', $Car_tags);
+    }
+
+
+    /**
+     * 授权验证
+     * @return
+     */
+    static function authority_verify()
+    {
+        $token = decodeToken();  // 解码token
+        $user = new \app\model\User();
+        $res = $user->where('openid', $token->id)->find();
+        if (empty($res)) {
+//            return error(401, '没有你的数据', $res);
+            return ['code' => 401, 'mes' => '没有你的数据', 'data' => null];
+        }
+        switch ($res['flas']) {
+            case '0':
+//                return error(306, '请上传审核资料', null);
+                return ['code' => 306, 'mes' => '请上传资料审核 【也可联系客服进行审核】', 'data' => null];
+            case '2':
+//                return error(307, '你的资料审核不通过，请重新上传资料', null);
+                return ['code' => 307, 'mes' => '你的资料审核不通过，请重新审核资料上传', 'data' => null];
+            case '3':
+//                return error(308, '资料审核中，请通过审核通过后再上传', null);
+                return ['code' => 308, 'mes' => '资料审核中，请通过审核通过后再上传', 'data' => null];
+//            case '4':
+////                return error(309, '你还不具备购买条件，若需购买请联系客服', null);
+//                return ['code' => 309, 'mes' => '你还不具备购买条件，若需购买请联系客服', 'data' => null];
+//            case '5':
+////                return error(400, '你还不具备上传条件，若需上传请联系客服', null);
+//                return ['code' => 400, 'mes' => '你还不具备上传条件，若需上传请联系客服', 'data' => null];
+        }
+//        4 只能上传 5 只能购买
+        return ['code' => 200, 'mes' => '', 'data' => null];
+    }
+
+    /**
+     * 验证用户是否登录
+     * @return \think\response\Json
+     */
+    public function loginVerify()
+    {
+        $request = Request::instance();
+        $token = $request->header('token');
+        $data = decodeToken($token); // 解码token
+        if (!$data) {
+            return error(304, '没有登录', null);
+        }
+        $es = self::authority_verify();
+        if ($es['code'] != 200) return json($es);
+        return success(200, '已登录', null);
+    }
+
+
+    // 验证用户是否购买了此线索
+    public function VerifyOrder()
+    {
+        $request = Request::instance()->post();
+        $token = decodeToken();
+        $clue_id = $request['id'];
+        $res = Db::table('order_list')->where(['openid' => $token->id, 'clue_id' => $clue_id])->find();
+        if (!$res) {
+            return false;
+        }
+        return $res;
+
+
+    }
+
+
+    // 获取签名数据集   wx.config({})
+    public function signJsapi()
+    {
+        $access_token = self::GetAccess_token();
+        if (!$access_token) {
+            Log::error('获取token出错');
+            return false;
+        }
+        $jsapiTicket = self::GetjsapiTicket($access_token);
+        if (!$jsapiTicket) {
+            Log::error('获取jsapi出错');
+            return false;
+        }
+        return self::sign($jsapiTicket);
+
+    }
+
+    // 获取access_token 搭配 signJsapi 获取签名
+    public function GetAccess_token()
+    {
+        $redis = new Redis(Config::get('cache.stores.redis'));
+        $access_token = $redis->get('access_token');
+        if ($access_token) {
+            return $access_token;
+        }
+
+        $Weixin = \think\facade\Config::get('WeixinConfig.Weixin');
+        $url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' . $Weixin['appid'] . '&secret=' . $Weixin['appsecret'];
+        $res = http::get($url);
+        Log::info($res);
+        $data = json_decode($res->body, true);
+        if (isset($data['errcode'])) {
+            Log::info('获取Access_token出错==={errcode}', ['errcode' => json_encode($data)]);
+            return false;
+        }
+        Log::info('这个是access_token====' . $data['access_token']);
+        $redis->set('access_token', $data['access_token'], 7000);
+        return $data['access_token'];
+    }
+
+    // 获取 jsapi_ticket 搭配 GetAccess_token
+    protected function GetjsapiTicket($access_token)
+    {
+        $redis = new Redis(Config::get('cache.stores.redis'));
+        $ticket = $redis->get('ticket');
+        if ($ticket) {
+            return $ticket;
+        }
+        $url = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=" . $access_token . "&type=jsapi";
+        $res = http::get($url);
+        $data = json_decode($res->body, true);
+        if ($data['errcode'] != 0) {
+            Log::info('获取jsapiTicket出错 ====  {errcode}', ['errcode' => json_encode($data)]);
+            return false;
+        }
+        Log::info('这个是ticket====' . $data['ticket']);
+        $redis->set('ticket', $data['ticket'], 7000);
+        return $data['ticket'];
+    }
+
+    // 生成 签名 数据集 搭配 GetAccess_token
+    protected function sign($jsapi_ticket)
+    {
+        $Weixin = \think\facade\Config::get('WeixinConfig.Weixin');
+        $data = [
+            'noncestr' => Formatter::nonce(),
+            'jsapi_ticket' => $jsapi_ticket,
+            'timestamp' => Formatter::timestamp(),
+            'url' => 'http://e.199909.xyz',
+        ];
+
+        ksort($data);
+        $res = urldecode(http_build_query($data, '', '&'));
+        Log::info($res);
+        $data['signature'] = sha1($res);
+        $data['appId'] = $Weixin['appid'];
+        return $data;
+    }
+
+
+    // 获取用户的ID 用于分享
+    public function UserId()
+    {
+        $token = decodeToken();
+        if ($token) {
+            return success(200, '获取成功', ['id' => $token->id]);
+        } else {
+            return error(304, '获取成功', ['id' => null]);
+        }
+    }
+
+
+}

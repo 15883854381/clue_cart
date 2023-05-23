@@ -107,7 +107,7 @@ class Clue extends BaseController
             }
         }
         $pageNum = $post['pageNum'] ?? 1;
-        $pageSize = $post['pageSize'] ?? 5;
+        $pageSize = $post['pageSize'] ?? 10;
         $pageCount = (($pageNum - 1) * $pageSize);
 
         $sql = "SELECT a.clue_id,sales,Tosell,CONCAT(user_name,IF(sex = 1 ,'先生','女士')) as user_name , IF(sex = 1 ,'男','女') as sex ,
@@ -121,7 +121,7 @@ class Clue extends BaseController
                                 LEFT JOIN t_car_brand b ON a.CartBrandID = b.id
                                 LEFT JOIN t_province c ON  a.provinceID = c.id
                                 LEFT JOIN t_city e ON  a.cityID = e.id
-                                left JOIN user f ON a.openid = f.openid where $where LIMIT $pageCount,$pageSize ";
+                                left JOIN user f ON a.openid = f.openid where $where ORDER BY createtime DESC  LIMIT $pageCount,$pageSize  ";
         $version = Db::query($sql);
 
         $clue = new \app\model\Clue();
@@ -175,11 +175,12 @@ class Clue extends BaseController
         $BuyOrder = [];
         // 此处判断是否购买了 订单 开始
         if ($token) {
-            $BuyOrder = $order->where([['clue_id', '=', $post['clue_id']], ['openid', '=', $token->id]])->find();
+            $BuyOrder = $order->where([['clue_id', '=', $post['clue_id']], ['openid', '=', $token->id]])->order('payment_time', 'DESC')->find();
         }
+        Log::info($BuyOrder);
 
         if (isset($BuyOrder['flat'])) {
-            if ($BuyOrder['flat'] == 1 || $BuyOrder['flat'] == 7) {
+            if ($BuyOrder['flat'] == 1 || $BuyOrder['flat'] == 6) {
                 $res = $clue->CluePhone($post['clue_id'], $post['type']);
             } else {
                 $res = $clue->ClueNotPhone($post['clue_id'], $post['type']);
@@ -409,6 +410,28 @@ class Clue extends BaseController
 
     }
 
+
+    // 验证手机号是否存在 和 是否有效
+    public function Phonecheck()
+    {
+        $post = Request::post();
+        if (!isset($post['phone_number'])) {
+            return error(304, '参数错误', null);
+        }
+
+        $clue = new \app\model\Clue();
+        $phone_res = $clue->where('phone_number', $post['phone_number'])->find();
+        if (!empty($phone_res)) {
+            return error(304, '当前手机号码已存在', null);
+        }
+
+        $phoneState = $this->batchUcheck($post['phone_number']);
+        if (!$phoneState) {
+            return error(304, '请输入有效得到手机号码', null);
+        }
+
+        return success(200, '手机正确', null);
+    }
 
     public function hello($name = 'ThinkPHP6')
     {

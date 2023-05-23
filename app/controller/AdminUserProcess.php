@@ -41,8 +41,10 @@ class AdminUserProcess extends BaseController
 
 
         $UserProcess = new UserProcess();
+        Log::info($updata);
         try {
             $res = $UserProcess->save($updata);
+
         } catch (\Exception $e) {
             return error(304, '上传失败', null);
         }

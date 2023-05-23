@@ -10,7 +10,7 @@ use WpOrg\Requests\Requests as http;
 // 不继承 BaseContrpller
 class UlitsThree
 {
-    public function sendWeiXinTempleat_notConter($item, $count, $date)
+    public function sendWeiXinTempleat_notConter($item, $count, $date, $brand)
     {
         $access_token = self::GetAccess_token_notConter();
         $url = "https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=" . $access_token;
@@ -22,7 +22,7 @@ class UlitsThree
             "url" => "http://e.199909.xyz/",
             "data" => [
                 "thing1" => ["value" => $item['nickname']],
-                "thing2" => ["value" => "【宝马】"],
+                "thing2" => ["value" => "【" . $brand . "】"],
                 "thing3" => ["value" => "新出线索【${count}】条供你挑选"],
                 "time4" => ["value" => $date],
             ]

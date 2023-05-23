@@ -261,7 +261,7 @@ class User extends BaseController
         $shareCount = $share->where('z_openid', '=', $token->id)->count();
 
 
-        return success(200, '获取成功', ['orderCount' => $shareCount, 'clueCount' => $clueCount, 'shareCount' => $shareCount]);
+        return success(200, '获取成功', ['orderCount' => $orderCount, 'clueCount' => $clueCount, 'shareCount' => $shareCount]);
 
 
     }

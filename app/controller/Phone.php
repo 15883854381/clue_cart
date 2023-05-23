@@ -61,6 +61,7 @@ class Phone extends BaseController
     {
         $user = new \app\model\User();
         $clue = new \app\model\Clue();
+        $oldClue = new \app\model\OldCart();
         // 查询主动呼叫的号码
         $token = decodeToken();  // 解码token
         $res = $user->where('openid', $token->id)->field('phone_number AS telA')->find();
@@ -70,10 +71,13 @@ class Phone extends BaseController
 
         // 查询被呼叫的电话号码
         $request = Request::instance()->post();
-        if (!isset($request['clue_id'])) {
+        if (!isset($request['clue_id']) || !isset($request['cart_type'])) {
             return false;
         }
-        $data = $clue->where('clue_id', $request['clue_id'])->field('phone_number  AS telB')->find();
+        $model = $request['cart_type'] === 1 ? $clue : $oldClue;
+
+
+        $data = $model->where('clue_id', $request['clue_id'])->field('phone_number  AS telB')->find();
         if (!$data) {
             return false;
         }

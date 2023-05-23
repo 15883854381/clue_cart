@@ -32,7 +32,7 @@ class AutoTask extends Command
         $force = trim($input->getArgument('force'));
         $task = new \EasyTask\Task();
         $task->setRunTimePath('./runtime/');
-        $task->addClass('app\controller\WeiXinUlits', 'sendTemplate', 'send_sms_task', 60 * 60, 1);
+        $task->addClass('app\controller\WeiXinUlits', 'sendTemplate', 'send_sms_task', 20, 1);
         if ($action == 'start') {
             $task->start();
         } elseif ($action == 'status') {

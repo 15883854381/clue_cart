@@ -120,7 +120,6 @@ class Order extends BaseController
                 'ExpirationTime' => $ExpirationTime,
                 'transaction_id' => $row['transaction_id'],
             ]);
-
             Queue::later($Order['Success'], time24QueryOrder::class, ['transaction_id' => $row['transaction_id']]);
             if (!$res) {
                 trace('交易是失败====' . $payment_time . '=====' . $res, 'error');
@@ -224,9 +223,9 @@ class Order extends BaseController
                 WHERE a.openid = '$token->id' ORDER BY creat_time DESC ";
         $res = Db::query($sql);
         if ($res) {
-            return success('200', '查询成功', $res);
+            return success(200, '查询成功', $res);
         } else {
-            return success('200', '还没有您的订单信息', $res);
+            return success(304, '还没有您的订单信息', $res);
         }
     }
 
@@ -337,5 +336,33 @@ class Order extends BaseController
         return error(304, '查询失败', null);
     }
 
+
+    // 推荐价格
+    public function recommend_price()
+    {
+        $post = Request::post();
+
+        $order = new \app\model\Order();
+        if (isset($post['CartBrandID'])) {
+            $sql = "SELECT AVG(price) AS total FROM order_list a LEFT JOIN clue b ON a.clue_id = b.clue_id WHERE b.CartBrandID =" . $post['CartBrandID'];
+            $res = Db::query($sql);
+            Log::error($res);
+            if (!empty($res[0]['total'])) {
+                $CountPrice = $res[0]['total'];
+            } else {
+                $CountPrice = $order->avg('price');
+            }
+            $ThreePrice = [
+                'unitPrice_1' => intval($CountPrice * 0.8),
+                'unitPrice_2' => intval($CountPrice * 0.7),
+                'unitPrice_3' => intval($CountPrice * 0.6)
+            ];
+            return success(200, '获取成功', $ThreePrice);
+
+        } else {
+            return success(304, '参数错误', null);
+        }
+
+    }
 
 }

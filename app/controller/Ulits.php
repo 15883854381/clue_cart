@@ -127,19 +127,25 @@ class Ulits extends BaseController
      */
     public function city()
     {
-        $t_province = Db::table('t_province')->field('id,name as text')->select()->toArray();
-        $t_city = Db::table('t_city')->field('id,name as text,province_id')->select()->toArray();
-        $i = 0;
-        foreach ($t_province as $item) {
-            $city = [];
-            foreach ($t_city as $it) {
-                if ($item['id'] == $it['province_id']) {
-                    $city[] = $it;
+        $redis = new Redis(Config::get('cache.stores.redis'));
+        $t_province = $redis->get('t_province');
+        if (!$t_province) {
+            $t_province = Db::table('t_province')->field('id,name as text')->select()->toArray();
+            $t_city = Db::table('t_city')->field('id,name as text,province_id')->select()->toArray();
+            $i = 0;
+            foreach ($t_province as $item) {
+                $city = [];
+                foreach ($t_city as $it) {
+                    if ($item['id'] == $it['province_id']) {
+                        $city[] = $it;
+                    }
                 }
+                $t_province[$i]['children'] = $city;
+                $i++;
             }
-            $t_province[$i]['children'] = $city;
-            $i++;
+            $redis->set('t_province', $t_province, 7200);
         }
+
         return success('200', '', $t_province);
     }
 
@@ -147,24 +153,36 @@ class Ulits extends BaseController
 //    获取汽车品牌
     public function CarBrand()
     {
-        $Car_Brand = Db::table('t_car_brand')->field('id,name')->select();
+        $redis = new Redis(Config::get('cache.stores.redis'));
+        $Car_Brand = $redis->get('Car_Brand');
+        if (!$Car_Brand) {
+            $Car_Brand = Db::table('t_car_brand')->field('id,name')->select();
+            $redis->set('Car_Brand', $Car_Brand, 7200);
+        }
         return success('200', '', $Car_Brand);
     }
 
 //    获取用户标签
     public function userTags()
     {
-        $Car_tags = Db::table('tags')->field("id,tagName as text")->where('sortid', 0)->select()->toArray();
-        $Car_tags_sub = Db::table('tags')->field("id,tagName as text,sortid")->where('sortid', '<>', 0)->select()->toArray();
+
+        $post = Request::post();
+        $WHERE_SUB = [ ['sortid', '=', 0]];
+        $WHERE_TAGS = "";
+        if (isset($post['cart_type'])) {
+            $WHERE_SUB[] = ['cart_type', '=', $post['cart_type']];
+            $WHERE_TAGS .= ' and a.cart_type = ' . $post['cart_type'];
+        }
+        $sql = "SELECT a.tagName as text,a.sortid,a.id FROM tags a LEFT JOIN (SELECT * FROM tags) b ON a.id = b.sortid WHERE a.sortid != 0 $WHERE_TAGS  ORDER BY a.sortid DESC";
+        $Car_tags = Db::table('tags')->field("id,tagName as text")->where($WHERE_SUB)->select()->toArray();
+        $Car_tags_sub = Db::query($sql);
         $i = 0;
         foreach ($Car_tags as $item) {
-            $tags = [];
             foreach ($Car_tags_sub as $it) {
                 if ($it['sortid'] == $item['id']) {
-                    $tags[] = $it;
+                    $Car_tags[$i]['children'][] = $it;
                 }
             }
-            $Car_tags[$i]['children'] = $tags;
             $i++;
         }
         return success('200', '', $Car_tags);

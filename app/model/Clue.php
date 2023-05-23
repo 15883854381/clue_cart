@@ -13,13 +13,13 @@ class Clue extends Model
     {
         $dataB = $type == 1 ? '`clue`' : 'clue_old';
 
-        $sql = "SELECT a.clue_id,sales,Tosell,CONCAT(user_name,IF(sex = 1 ,'先生','女士')) as user_name , IF(sex = 1 ,'男','女') as sex ,
+        $sql = "SELECT a.clue_id,a.flag,sales,Tosell,CONCAT(user_name,IF(sex = 1 ,'先生','女士')) as user_name , IF(sex = 1 ,'男','女') as sex ,
                  a.phone_number as Cluephone_number,b.name as cartName,
                  CONCAT(c.`name`,'.',e.`name`) AS provinceCity,PhoneBelongingplace,
                  ROUND(100 / sales * Tosell) as progress,
                  (UNIX_TIMESTAMP(createtime)*1000) as createtime,
                  (CASE Tosell WHEN 0 THEN unitPrice_1  WHEN 1 THEN unitPrice_2 ELSE unitPrice_3 END) as Price,
-                 upClueNum,IF(type=1,nickname,companyName) as nclueName 
+                 upClueNum,IF(type=4,nickname,companyName) as nclueName 
                  FROM ${dataB} a 
                  LEFT JOIN t_car_brand b ON a.CartBrandID = b.id
                  LEFT JOIN t_province c ON  a.provinceID = c.id
@@ -33,13 +33,13 @@ class Clue extends Model
     public function ClueNotPhone($id, $type)
     {
         $dataB = $type == 1 ? '`clue`' : 'clue_old';
-        $sql = "SELECT a.clue_id,
+        $sql = "SELECT a.clue_id,a.flag,
                 CONCAT(user_name,IF(sex = 1 ,'先生','女士')) as user_name ,
                 CONCAT_WS('*********',substring( a.phone_number, 1, 3 ),substring( a.phone_number, 12, 4 )) AS Cluephone_number,
                 PhoneBelongingplace,sales,Tosell,
                 CONCAT(b.`name`,'.',c.`name`) AS provinceCity,
                 ROUND((100 / sales) * Tosell) as progress,d.`name` as brandname ,releaseNum,
-                upClueNum,IF(type=1,nickname,companyName) as clueName,
+                upClueNum,IF(type=4,nickname,companyName) as clueName,
                 (CASE Tosell WHEN 0 THEN unitPrice_1  WHEN 1 THEN unitPrice_2 ELSE unitPrice_3 END) as Price
                 FROM ${dataB} a 
                 LEFT JOIN t_province b ON a.provinceID = b.id  	

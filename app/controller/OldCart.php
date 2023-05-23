@@ -85,7 +85,7 @@ class OldCart extends BaseController
                 return error('304', "第【${n}】次价格不能大于【2000】元", null);
             }
             if ($i > 0) {
-                if ($pickNum > $post["unitPrice_" . $i]) {
+                if ($pickNum < $post["unitPrice_" . $i]) {
                     return error('304', "第【${n}】次价格不能大于第【${i}】次 价格", null);
                 }
             }

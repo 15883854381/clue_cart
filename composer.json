@@ -35,7 +35,8 @@
         "ext-curl": "*",
         "phpoffice/phpexcel": "^1.8",
         "ramsey/uuid": "^4.2",
-        "easy-task/easy-task": "^2.4"
+        "easy-task/easy-task": "^2.4",
+        "phpoffice/phpspreadsheet": "^1.25"
     },
     "require-dev": {
         "symfony/var-dumper": "^4.2",

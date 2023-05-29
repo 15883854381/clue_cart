@@ -82,22 +82,29 @@ class Admincustomer extends BaseController
     {
         $token = decodeToken();
         $request = Request::domain(1);
-        try {
-            $res = Db::table('user')->where('openid', $token->id)->field('area')->find();
-        } catch (\Exception $e) {
+        if (!$token){
             $row = Db::table('customer')->where('region', '0')->find();
             $row['WatchCode'] = $request . '/' . 'storage' . '/' . $row['WatchCode'];
-            return success(200, '', $row);
+            return success(200, '没有专属客服', $row);
         }
+
+
+        $res = Db::table('user')->where('openid', $token->id)->field('area')->find();
+        if (!$res || empty($res['area'])) {
+            $row = Db::table('customer')->where('region', '0')->find();
+            $row['WatchCode'] = $request . '/' . 'storage' . '/' . $row['WatchCode'];
+            return success(200, '没有专属客服', $row);
+        }
+
         $row = Db::table('customer')->when(empty($res['area']),
             function ($query) {
                 $query->where('region', '0');
-            }, function ($query, $res) {
+            }, function ($query) use ($res) {
                 $query->where([['region', 'like', '%' . $res['area'] . '%']]);
             })->where('flag', 1)->find();
 
         $row['WatchCode'] = $request . '/' . 'storage' . '/' . $row['WatchCode'];
-        return success(200, '', $row);
+        return success(200, '1233', $row);
     }
 
     private function upImgWeix($media)

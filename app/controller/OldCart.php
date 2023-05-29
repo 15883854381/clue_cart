@@ -4,6 +4,7 @@ namespace app\controller;
 
 use app\BaseController;
 use Ramsey\Uuid\Uuid;
+use think\facade\Db;
 use think\facade\Log;
 use think\facade\Request;
 use app\model\OldCart as OldCartModedl;
@@ -34,6 +35,10 @@ class OldCart extends BaseController
         $clue_id = Uuid::uuid6()->getHex()->toString();
         $token = decodeToken();
 
+        for ($i = 0; $i < $post['sales']; $i++) {
+            $post['unitPrice_' . ($i + 1)] = $post['unitPrice_' . $i];
+        }
+
 
         $data = ['clue_id' => $clue_id, 'openid' => $token->id, 'PhoneBelongingplace' => $PhoneBelongingplace['area']];
         $updata = array_merge($data, $post);
@@ -41,7 +46,7 @@ class OldCart extends BaseController
         if (!$res) {
             return error(304, '上传线索失败，请核对数据后重新上传', null);
         }
-
+        Db::name('user')->where('openid', $token->id)->inc('upClueNum', 1)->update(); // 用户的上上传数据 增加
         // 添加tagsMap
         if (!empty($updata['userTags'])) {
             $oldcart->TagsMap($clue_id, $updata['userTags']);
@@ -54,6 +59,7 @@ class OldCart extends BaseController
     private function updatavail()
     {
         $post = Request::post();
+        Log::info($post);
         // 验证数据
         try {
             validate(\app\validate\OldCart::class)->check($post);
@@ -99,13 +105,14 @@ class OldCart extends BaseController
 
     function SelectCart()
     {
+
+        $post = Request::post();
         $oldcart = new OldCartModedl();
-        $res = $oldcart->SelectOldClue();
+        $res = $oldcart->SelectOldClue($post);
         $data = $res['data'];
         $clue_id = implode(array_column($res['data'], 'clue_id'), "','");
         $tages = $oldcart->SelectTages($clue_id);
         $i = 0;
-
         foreach ($data as $item) {
             $tag = [];
             foreach ($tages as $it) {
@@ -113,14 +120,10 @@ class OldCart extends BaseController
                     $tag[] = $it;
                 }
             }
-
             $data[$i]['child'] = $tag;
             $i++;
         }
         $res['data'] = $data;
-        Log::info($data);
-
-
         return success(200, '获取成功', $res);
     }
 

@@ -60,7 +60,6 @@ class AdminOrder extends BaseController
 
         $data = self::verify($post['id']);
         Log::info($data);
-        Log::info("这是数据");
         if (!$data) {
             return error(304, '此用户不具备退款条件', null);
         }
@@ -86,19 +85,24 @@ class AdminOrder extends BaseController
         if ($post['flat'] == 7) {
             try {
                 $pay = new Payment();
-                $pay->Orderrefund($data); // 退款
+                $pay->Orderrefund($data); // 退款  若此处报错后面的代码就不会向后执行
 
                 $dataB = $data['cart_type'] == 1 ? 'clue' : 'clue_old';
-//                DB::table($dataB)->where([['clue_id', '=', $data['clue_id']], ['Tosell', '>', 0]])->dec('Tosell')->update();
+                // 根据购买次数 做出相应的库存 减法
                 DB::table($dataB)->where([['clue_id', '=', $data['clue_id']], ['Tosell', '>', 0]])->save(['Tosell' => Db::raw('Tosell- ' . $data['buy_num'])]);
 
             } catch (\Exception $e) {
                 if ($e instanceof \GuzzleHttp\Exception\RequestException && $e->hasResponse()) {
                     $r = $e->getResponse();
                     $errorMessage = json_decode($r->getBody(), true);
-                    if ($r->getStatusCode() == 400) {
+                    if ($r->getStatusCode() == 403) {
+                        DB::table('order_list')->where('id', $post['id'])->save(['flat' => 5]);
+                    }
+
+                    if ($r->getStatusCode() == 400) { // 已经发生退款
                         DB::table('order_list')->where('id', $post['id'])->save(['flat' => 8]);
                     }
+
 
                     return error(304, $errorMessage['message'], null);
                 }

@@ -22,7 +22,7 @@ class Order extends BaseController
         $request = Request::instance()->post();
         // 权限验证
         $data = Tool::authority_verify();
-        if ($data['code'] != 200) return json($data);
+        if ($data['code'] != 200 && $data['code'] != 400) return json($data);
         //购买名额验证
         $res = self::clueNumInventory();
         if (!$res) {
@@ -196,8 +196,7 @@ class Order extends BaseController
      * 查询当前用户的 订单数据
      * @return \think\response\Json
      */
-    public
-    function orderSelect()
+    public function orderSelect()
     {
         $token = decodeToken();  // 解码token
         $sql = " SELECT
@@ -207,6 +206,7 @@ class Order extends BaseController
                 	out_trade_no,
                 	creat_time,
                 	flat,
+                	callPhoneNumber,
                 	CONCAT(
                 		b.user_name,
                 	IF
@@ -261,7 +261,6 @@ class Order extends BaseController
             return error(304, '价格不一致', null);
         }
         return 'success';
-
     }
 
     // 验证发布者的id 和 购买者的id 不能相同
@@ -362,6 +361,27 @@ class Order extends BaseController
         } else {
             return success(304, '参数错误', null);
         }
+    }
+
+    // 收益明细 和 收益金额
+    public function incomeDetail()
+    {
+        $token = decodeToken();
+
+        $sql = "SELECT a.price,buy_num, DATE_ADD(payment_time, INTERVAL 1 DAY) AS payment_time,user_name,sex FROM order_list a 
+                LEFT JOIN clue b ON a.clue_id = b.clue_id
+                WHERE (flat = 1 or flat = 6) and up_openid ='$token->id' ";
+        $res = Db::query($sql);
+        $total = 0;
+        if (!$res) {
+            return error(304, '没有你的收益数据', ['total' => 0, 'data' => $res]);
+        }
+
+        foreach ($res as $item) {
+            $total += $item['price'];
+        }
+
+        return success(200, '获取成功', ['total' => $total, 'data' => $res]);
 
     }
 

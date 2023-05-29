@@ -6,6 +6,7 @@ use app\BaseController;
 
 use app\model\User as UserModel;
 
+use app\Ulits\JSSDK;
 use think\facade\Db;
 use think\facade\Log;
 use think\facade\Session;
@@ -167,7 +168,7 @@ class Ulits extends BaseController
     {
 
         $post = Request::post();
-        $WHERE_SUB = [ ['sortid', '=', 0]];
+        $WHERE_SUB = [['sortid', '=', 0]];
         $WHERE_TAGS = "";
         if (isset($post['cart_type'])) {
             $WHERE_SUB[] = ['cart_type', '=', $post['cart_type']];
@@ -211,13 +212,13 @@ class Ulits extends BaseController
                 return ['code' => 307, 'mes' => '你的资料审核不通过，请重新审核资料上传', 'data' => null];
             case '3':
 //                return error(308, '资料审核中，请通过审核通过后再上传', null);
-                return ['code' => 308, 'mes' => '资料审核中，请通过审核通过后再上传', 'data' => null];
-//            case '4':
-////                return error(309, '你还不具备购买条件，若需购买请联系客服', null);
-//                return ['code' => 309, 'mes' => '你还不具备购买条件，若需购买请联系客服', 'data' => null];
-//            case '5':
-////                return error(400, '你还不具备上传条件，若需上传请联系客服', null);
-//                return ['code' => 400, 'mes' => '你还不具备上传条件，若需上传请联系客服', 'data' => null];
+                return ['code' => 308, 'mes' => '资料审核中...', 'data' => null];
+            case '4':
+//                return error(309, '你还不具备购买条件，若需购买请联系客服', null);
+                return ['code' => 309, 'mes' => '你还没有购买权限，若需购买请联系客服', 'data' => null];
+            case '5':
+//                return error(400, '你还不具备上传条件，若需上传请联系客服', null);
+                return ['code' => 400, 'mes' => '你还不具备上传条件，若需上传请联系客服', 'data' => null];
         }
 //        4 只能上传 5 只能购买
         return ['code' => 200, 'mes' => '', 'data' => null];
@@ -260,6 +261,7 @@ class Ulits extends BaseController
     // 获取签名数据集   wx.config({})
     public function signJsapi()
     {
+        $post = Request::post();
         $access_token = self::GetAccess_token();
         if (!$access_token) {
             Log::error('获取token出错');
@@ -270,7 +272,8 @@ class Ulits extends BaseController
             Log::error('获取jsapi出错');
             return false;
         }
-        return self::sign($jsapiTicket);
+        $data = self::sign($jsapiTicket, $post['url']);
+        return $data;
 
     }
 
@@ -318,14 +321,14 @@ class Ulits extends BaseController
     }
 
     // 生成 签名 数据集 搭配 GetAccess_token
-    protected function sign($jsapi_ticket)
+    protected function sign($jsapi_ticket, $url = '')
     {
         $Weixin = \think\facade\Config::get('WeixinConfig.Weixin');
         $data = [
             'noncestr' => Formatter::nonce(),
             'jsapi_ticket' => $jsapi_ticket,
-            'timestamp' => Formatter::timestamp(),
-            'url' => 'http://e.199909.xyz',
+            'timestamp' => (string)Formatter::timestamp(),
+            'url' => $url,
         ];
 
         ksort($data);
@@ -346,6 +349,33 @@ class Ulits extends BaseController
         } else {
             return error(304, '获取成功', ['id' => null]);
         }
+    }
+
+    /**
+     *短信平台 检测手机号码 有效
+     * @param $mobiles
+     * @return false|mixed
+     */
+    public function batchUcheck($mobiles)
+    {
+        $Code = Config::get('WeixinConfig.Code');
+        $params = [
+            'appId' => $Code['appId'], // appId,登录万数平台查看
+            'appKey' => $Code['appKey'], // appKey,登录万数平台查看
+            'mobiles' => $mobiles, // 要检测的手机号，多个手机号码用英文半角逗号隔开
+        ];
+        $response = http::post('https://api.253.com/open/unn/batch-ucheck', [], $params);
+
+        $data = json_decode($response->body, true);
+        if (!isset($data['code']) or $data['code'] != '200000') {
+            Log::error($data);
+            return false;
+        }
+        // 手机状态
+        if ($data['data'][0]['status'] != 1 && $data['data'][0]['status'] != 4) {
+            return false;
+        }
+        return $data['data'][0];
     }
 
 

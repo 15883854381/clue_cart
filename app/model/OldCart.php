@@ -31,15 +31,14 @@ class OldCart extends Model
     }
 
     // 获取二手车的线索
-    function SelectOldClue()
+    function SelectOldClue($post)
     {
-        $post = Request::post();
-        $pageNum = $post['pageNum'] ?? 1;
-        $pageSize = $post['pageSize'] ?? 5;
-        $pageCount = (($pageNum - 1) * $pageSize);
 
+        $pageNum = $post['PageNum'] ?? 1;
+        $pageSize = $post['pageSize'] ?? 10;
+        $pageCount = (($pageNum - 1) * $pageSize);
         $where = " flag = 1 ";
-        $countWhere = 'flag = 1';
+        $countWhere = ' flag = 1';
         if (isset($post['provinceID'])) {
             if ($post['provinceID'] != 0) {
                 $where .= ' and a.provinceID =' . $post['provinceID'];
@@ -55,7 +54,7 @@ class OldCart extends Model
             }
         }
 
-        $sql = "SELECT a.clue_id,sales,Tosell,CONCAT(user_name,IF(sex = 1 ,'先生','女士')) as user_name , IF(sex = 1 ,'男','女') as sex ,
+        $sql = "SELECT a.clue_id,sales,a.cart_type,Tosell,CONCAT(user_name,IF(sex = 1 ,'先生','女士')) as user_name , IF(sex = 1 ,'男','女') as sex ,
                                 CONCAT_WS('*********',substring(a.phone_number, 1, 3),
                                 substring(a.phone_number, 12, 4)) as Cluephone_number,b.name as cartName,
                                 CONCAT(c.`name`,'.',e.`name`) AS provinceCity,
@@ -66,7 +65,8 @@ class OldCart extends Model
                                 LEFT JOIN t_car_brand b ON a.CartBrandID = b.id
                                 LEFT JOIN t_province c ON  a.provinceID = c.id
                                 LEFT JOIN t_city e ON  a.cityID = e.id
-                                left JOIN user f ON a.openid = f.openid where $where LIMIT $pageCount,$pageSize ";
+                                left JOIN user f ON a.openid = f.openid where $where ORDER BY createtime DESC  LIMIT $pageCount,$pageSize ";
+        Log::error($sql);
 
         $res = Db::query($sql);
         $count = $this->where($countWhere)->count();

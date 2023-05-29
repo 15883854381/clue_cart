@@ -12,6 +12,8 @@ return [
     'Code' => [
         'account' => 'YZM9536443', // 短信验证码
         'password' => 'TCr1v312qq1cd7',// 短信验证码
+        'Marke_account'=>'M9073072',
+        'Marke_password'=>'CfI7efL5j1f190',
         'appId' => 'N7LIDXwL', // 手机号码有查询
         'appKey' => 'NoJo2VBT' // 手机号码有查询
     ],
@@ -23,7 +25,7 @@ return [
         'TelX' => '03512929459'
     ],
     'Order' => [
-        'Close' => 5 * 30,// 关闭交易时间  单位 s
-        'Success' => 10 * 60  // 交易成功   单位  s
+        'Close' => 5 * 60,// 关闭交易时间  单位 s
+        'Success' => 24 * 60 * 60  // 交易成功   单位  s
     ]
 ];

@@ -25,22 +25,6 @@ class WXMenu extends BaseController
                     "name" => "汽车线索",
                     "url" => "http://e.199909.xyz/",
                     "type" => "view",
-//                    "sub_button" => [
-//
-//                        [
-//                            "type" => "view",
-//                            "name" => "购买线索",
-//                            "url" => "http://e.199909.xyz/",
-//                            'key' => '2'
-//                        ],
-//                        [
-//                            "type" => "view",
-//                            "name" => "发布线索",
-//                            "url" => "http://e.199909.xyz/#/up_Business",
-//                            'key' => '1'
-//
-//                        ]
-//                    ]
 
                 ],
                 [
@@ -48,23 +32,6 @@ class WXMenu extends BaseController
                     "type" => "click",
                     "key" => 'SYSM-001'
                 ],
-//                [
-//                    "name" => "我的",
-//                    "sub_button" => [
-//                        [
-//                            "type" => "click",
-//                            "name" => "联系客服",
-//                            "key" => "SYSM-001",
-//                            "sub_button" => []
-//                        ],
-//                        [
-//                            "type" => "view",
-//                            "name" => "登录/注册",
-//                            "url" => "http://e.199909.xyz/#/user_data",
-//                            'key' => '4'
-//                        ]
-//                    ]
-//                ]
             ]
         ];
         $res = http::post($url, [], json_encode($data, JSON_UNESCAPED_UNICODE));
@@ -78,17 +45,22 @@ class WXMenu extends BaseController
         $xmlData = file_get_contents("php://input");
         // 解析 xml
         $postArr = simplexml_load_string($xmlData, "SimpleXMLElement", LIBXML_NOCDATA);
+        Log::info($postArr);
         if ($postArr->Event == 'CLICK') {
             switch ($postArr->EventKey) {
                 case 'SYSM-001':
                     $data = self::customer($postArr->FromUserName);
                     return self::Image($postArr->FromUserName, $postArr->ToUserName, $data['media_id']);
             }
+        } elseif ($postArr->Event == 'subscribe') {
+            Log::info('我关注了公众号');
+            return self::SendText($postArr->FromUserName, $postArr->ToUserName, '欢迎关注汽车共享联盟');
         }
     }
 
     // 客服分配
-    function customer($openid){
+    function customer($openid)
+    {
         $res = Db::table('user')->where('openid', $openid)->field('area')->find();
         if (!$res) {
             return Db::table('customer')->where('region', '0')->find();
@@ -102,8 +74,30 @@ class WXMenu extends BaseController
     }
 
 
+    // 关注自动回复
+    public function get_current_autoreply_info()
+    {
+        $ulite = new Ulits($this->app);
+        $access_token = $ulite->GetAccess_token();
+        $url = 'https://api.weixin.qq.com/cgi-bin/get_current_autoreply_info?access_token=' . $access_token;
+
+        $data = [
+            'is_add_friend_reply_open' => 1,
+            'is_autoreply_open' => 1,
+            'add_friend_autoreply_info' => "欢迎关注公众号",
+            'type' => 'text',
+            'content' => '你好',
+            ''
+        ];
+        $res = http::post($url, [], json_encode($data, JSON_UNESCAPED_UNICODE));
+        return $res->body;
+
+
+    }
+
+
     // 发送文字信息
-    private function SendText($ToUserName, $FromUserName, $Content)
+    private function SendText($FromUserName, $ToUserName, $Content)
     {
         $textXml = "<xml>
                   <ToUserName><![CDATA[%s]]></ToUserName>

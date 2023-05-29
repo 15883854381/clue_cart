@@ -14,7 +14,7 @@ class time24QueryOrder
     {
         $Order = Db::table('order_list');
         $res = $Order->where('transaction_id', $data['transaction_id'])->find();
-        if ($res['flat'] == 3) {
+        if ($res['flat'] == 3 or $res['flat'] == 4) {
             $Order->update(['flat' => 1]);
         }
         Log::info($data);

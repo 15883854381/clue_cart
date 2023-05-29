@@ -18,17 +18,21 @@ class Test
 {
     public function index()
     {
-
-
-//        $user = new \app\model\User();
-//        $date = date('Y年m月d');
-//        $userdata = $user->field('openid,nickname')->where([['id', '<>', '51']])->select();
-//        $clue = new \app\model\Clue();
-//        $count = $clue->where('flag', 1)->count();
-//        $ulitsThree = new UlitsThree();
-//        foreach ($userdata as $item) {
-//            $ulitsThree->sendWeiXinTempleat_notConter($item, $count, $date);
+//        $fruits = array('apple', 'orange', 'banana', 'grape');
+//        if (in_array('orange', $fruits)) {
+//            echo '存在';
+//        } else {
+//            echo '不存在';
 //        }
+        $hour = date('H');
+        $fruits = [9, 10,11,12, 14, 16, 18, 19];
+        if (!in_array($hour, $fruits)) {
+            echo  '不存在';
+        }else{
+            echo '存在';
+        }
+
+
     }
 
 

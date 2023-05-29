@@ -157,7 +157,6 @@ class Payment
         ];
         try {
             $resp = $this->APIv3()->chain('/v3/transfer/batches')->post(['json' => $updata]);
-            file_put_contents('1.txt', json_encode($resp));
             return $resp->getBody();
         } catch (\Exception $e) {
 

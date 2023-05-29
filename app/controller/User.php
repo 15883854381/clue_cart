@@ -250,19 +250,20 @@ class User extends BaseController
     {
         $order = new \app\model\Order(); // 订单
         $clue = new  \app\model\Clue(); // 线索
+        $oldClue = new \app\model\OldCart(); // 旧车
         $share = new \app\model\Share(); // 分享
 
         $token = decodeToken();
         // 收益金额
-        $orderCount = $order->where([['up_openid', '=', $token->id], ['flat', '=', 1]])->sum('price');
+        $orderCount = $order->where([['up_openid', '=', $token->id], ['flat', 'in', ['1','6']]])->sum('price');
         // 发布的线索数量
         $clueCount = $clue->where([['openid', '=', $token->id], ['flag', '=', 1]])->count();
+        // 旧车
+        $OldClueCount = $oldClue->where([['openid', '=', $token->id], ['flag', '=', 1]])->count();
         // 分享的数量
         $shareCount = $share->where('z_openid', '=', $token->id)->count();
 
-
-        return success(200, '获取成功', ['orderCount' => $orderCount, 'clueCount' => $clueCount, 'shareCount' => $shareCount]);
-
+        return success(200, '获取成功', ['orderCount' => $orderCount, 'clueCount' => $clueCount + $OldClueCount, 'shareCount' => $shareCount]);
 
     }
 

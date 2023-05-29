@@ -18,8 +18,12 @@ class AdminUserProcess extends BaseController
         // 文件处理并返回数据 url
         $fileimg = Request()->file('file');
 
-
         $token = decodeToken();  // 解码token
+
+        $UserProcess = new UserProcess();
+        $UserProcess->where('openid', $token->id)->delete();
+
+
         $updata = [
             'openid' => $token->id,
             'username' => $post['username'],

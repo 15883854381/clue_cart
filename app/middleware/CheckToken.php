@@ -38,7 +38,8 @@ class CheckToken
             '/Success/SelectSucessCase', // 成交案例
             '/OldCart/SelectCart',// 二手车的线索数据
             '/Ulits/city',
-            '/Ulits/CarBrand'
+            '/Ulits/CarBrand',
+            '/Clue/SearchClueBuyNUm'
         ];
         $controller = $request->controller(); // controller
         $action = $request->action(); // action

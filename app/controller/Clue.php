@@ -110,7 +110,7 @@ class Clue extends BaseController
         $pageSize = $post['pageSize'] ?? 10;
         $pageCount = (($pageNum - 1) * $pageSize);
 
-        $sql = "SELECT a.clue_id,sales,Tosell,CONCAT(user_name,IF(sex = 1 ,'先生','女士')) as user_name , IF(sex = 1 ,'男','女') as sex ,
+        $sql = "SELECT a.clue_id,sales,a.cart_type,Tosell,CONCAT(user_name,IF(sex = 1 ,'先生','女士')) as user_name , IF(sex = 1 ,'男','女') as sex ,
                                 CONCAT_WS('*********',substring(a.phone_number, 1, 3),
                                 substring(a.phone_number, 12, 4)) as Cluephone_number,b.name as cartName,
                                 CONCAT(c.`name`,'.',e.`name`) AS provinceCity,
@@ -185,6 +185,7 @@ class Clue extends BaseController
             } else {
                 $res = $clue->ClueNotPhone($post['clue_id'], $post['type']);
             }
+            $res[0]['flat'] = $BuyOrder['flat'];
         } else {
             $res = $clue->ClueNotPhone($post['clue_id'], $post['type']);
         }
@@ -194,7 +195,7 @@ class Clue extends BaseController
 //        } else {
 //            $res = $clue->ClueNotPhone($post['clue_id'], $post['type']);
 //        }
-        $res[0]['flat'] = $BuyOrder['flat'];
+
         $clue_id = $post['clue_id'];
         $tags_sql = "SELECT tagName FROM tagsmap a LEFT JOIN tags b ON a.tags_id = b.id WHERE clue_id = '${clue_id}'";
         $tags = Db::query($tags_sql);
@@ -204,7 +205,7 @@ class Clue extends BaseController
     }
 
 
-    // TODO 删除线索数据
+    // 删除线索数据
     public function deleteCurl()
     {
         $request = Request::instance();
@@ -264,8 +265,6 @@ class Clue extends BaseController
         }
         // 判断用户的手机号是否存在数据库 == 结束
 
-
-        // TODO 检测手机号码是否存在 === 开始 用于上传时 检测是否有效
         $number_city = self::batchUcheck($post['phone_number']);
         if (!$number_city) {
             return error('304', '请输入有效的手机号', $number_city);
@@ -320,6 +319,8 @@ class Clue extends BaseController
         $field = array_merge(['openid', 'user_name', 'clue_id', 'sex', 'phone_number', 'CartBrandID', 'provinceID', 'cityID', 'PhoneBelongingplace', 'sales'], $pickArr);
         //上传
         $res = $clue->allowField($field)->save($post);
+        Log::info($res);
+
 
         if ($res) {
             if (isset($post['userTags'])) {
@@ -377,13 +378,11 @@ class Clue extends BaseController
             return false;
         }
         return $data['data'][0];
-
     }
 
     // 分享线索
     public function shareClue()
     {
-
 
         $data = new Ulits($this->app);
         $res = $data->signJsapi();
@@ -399,12 +398,11 @@ class Clue extends BaseController
     // 查询线索已经售卖次数列表
     public function SearchClueBuyNUm()
     {
-        $older = new \app\model\Order();
         $post = Request::post();
         if (!isset($post['clue_id'])) return error(304, '参数错误', null);
         $sql = "SELECT `buy_num`,`payment_time`,IFNULL(notes_name,nickname) as user_name FROM `order_list` a 
                 LEFT JOIN `user` b  ON a.openid = b.openid
-                WHERE  `flat` = 1 AND `clue_id` = '${post['clue_id']}'";
+                WHERE  `flat` not in (7,8,9)  AND `clue_id` = '${post['clue_id']}'";
         $res = Db::query($sql);
         return success(200, '获取成功', $res);
 

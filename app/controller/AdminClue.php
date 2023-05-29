@@ -3,8 +3,12 @@
 namespace app\controller;
 
 use app\BaseController;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use think\facade\Config;
 use think\facade\Db;
 use think\facade\Request;
+use think\cache\driver\Redis;
+use think\response\Json;
 
 class AdminClue extends BaseController
 {
@@ -81,7 +85,66 @@ class AdminClue extends BaseController
 
         return success(200, '修改成功', null);
 
+    }
+
+    // 批量上传
+    function batchUp()
+    {
+        $file = request()->file('file');
+        if (!$file) {
+            print_r('请选择需要导入的文件');
+            die;
+        }
+        $Data = self::ReadExcel($file);
+
+        $UpDataArray = [];
+        foreach ($Data as $key => $item) {
+            $UpDataArray[] = [
+                'user_name' => $item[0],
+                'phone_number' => $item[1],
+                'sales' => $item[2],
+                'unitPrice_1' => $item[3],
+                'unitPrice_2' => $item[4],
+                'unitPrice_3' => $item[5],
+                'cart_type' => $item[6],
+            ];
+        }
+        if (empty($UpDataArray)) {
+            return error(304, '上传失败', null);
+        }
+        $redis = new Redis(Config::get('cache.stores.redis'));
+        $UpDataArray = $redis->set('UpDataArray', $UpDataArray, 7200);
+        return success(200, '上传成功', null);
+    }
+
+
+    function ReadExcel($file)
+    {
+        $spreadsheet = IOFactory::load($file->getRealPath());
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // 处理文件数据
+        $data = [];
+        foreach ($sheet->getRowIterator() as $row) {
+            $rowIndex = $row->getRowIndex();
+            // 不读取第一行 标题
+            if ($rowIndex == 1) {
+                continue;
+            }
+            $cellIterator = $row->getCellIterator();
+            $row = [];
+            foreach ($cellIterator as $cell) {
+                $row[] = $cell->getValue();
+            }
+            $data[] = $row;
+        }
+
+        // 数据入库处理
+
+
+        return $data;
 
     }
+
 
 }

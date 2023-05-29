@@ -6,6 +6,7 @@ namespace app\command;
 use app\controller\Test;
 use app\controller\Ulits;
 use app\controller\User;
+use app\controller\WeiXinUlits;
 use think\console\Command;
 use think\console\Input;
 use think\console\input\Argument;
@@ -32,7 +33,27 @@ class AutoTask extends Command
         $force = trim($input->getArgument('force'));
         $task = new \EasyTask\Task();
         $task->setRunTimePath('./runtime/');
-        $task->addClass('app\controller\WeiXinUlits', 'sendTemplate', 'send_sms_task', 20, 1);
+        $task->addFunc(function () {
+            $hour = date('H');
+            $fruits = [9, 10, 11, 12, 14, 16, 18, 19];
+            if (!in_array($hour, $fruits)) {
+                return;
+            }
+            $sendTemplate = new WeiXinUlits();
+            $sendTemplate->sendTemplate();
+
+        }, 'sendTemplate', 60 * 60, 1);
+        $task->addFunc(function () {
+            $hour = date('H');
+            $fruits = [11];
+            if (!in_array($hour, $fruits)) {
+                return;
+            }
+            $sendTemplate = new WeiXinUlits();
+            $sendTemplate->pushInfo();
+        }, 'pushInfo', 60 * 60, 1);
+
+
         if ($action == 'start') {
             $task->start();
         } elseif ($action == 'status') {

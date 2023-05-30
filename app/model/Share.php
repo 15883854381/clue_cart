@@ -28,6 +28,7 @@ class Share extends Model
     {
         $sql = "SELECT
 	a.clue_id,
+	a.cart_type,
 	CONCAT(
 		user_name,
 	IF
@@ -51,6 +52,7 @@ FROM
 		unitPrice_2,
 		unitPrice_3,
 		createtime,
+		cart_type,
 		clue_id,
 		PhoneBelongingplace,
 		sex,
@@ -68,6 +70,7 @@ FROM
 		unitPrice_2,
 		unitPrice_3,
 		createtime,
+		cart_type,
 		clue_id,
 		PhoneBelongingplace,
 		sex,
@@ -81,8 +84,6 @@ FROM
 	LEFT JOIN t_city c ON a.provinceID = c.id
 	LEFT JOIN t_car_brand d ON a.CartBrandID = d.id
 WHERE a.openid='$openid' AND flag = 1";
-
-
         \think\facade\Log::info($sql);
         return Db::query($sql);
 

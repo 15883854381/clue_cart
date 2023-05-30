@@ -42,10 +42,16 @@ class WXMenu extends BaseController
     // 发送 图片
     public function sendImage()
     {
+        if (Request::isGet()) {
+            $get = Request::get();
+            if (isset($get['echostr'])) {
+                return $get['echostr'];
+            }
+        }
+
         $xmlData = file_get_contents("php://input");
         // 解析 xml
         $postArr = simplexml_load_string($xmlData, "SimpleXMLElement", LIBXML_NOCDATA);
-        Log::info($postArr);
         if ($postArr->Event == 'CLICK') {
             switch ($postArr->EventKey) {
                 case 'SYSM-001':
@@ -53,7 +59,6 @@ class WXMenu extends BaseController
                     return self::Image($postArr->FromUserName, $postArr->ToUserName, $data['media_id']);
             }
         } elseif ($postArr->Event == 'subscribe') {
-            Log::info('我关注了公众号');
             return self::SendText($postArr->FromUserName, $postArr->ToUserName, '欢迎关注汽车共享联盟');
         }
     }

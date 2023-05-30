@@ -51,7 +51,10 @@ class User extends BaseController
         $res = file_get_contents('https://api.weixin.qq.com/sns/userinfo?access_token=' . $access_token . '&openid=' . $openid . '&lang=zh_CN');
         $res = json_decode($res);
 
+
+        //验证号码归属地
         $cityData = self::PhonenumberCity($post['phone_number']); // 号码归属地
+
 
         // 此处做验证 验证是否上传了 userid  如果存在userid 就需要判断 这个 userid 是否存在数据库
 
@@ -66,13 +69,29 @@ class User extends BaseController
             'period_access_token' => date('Y-m-d H:i:s', $time),
             'area' => $cityData['province']
         ];
+        Log::info($insertData);
 
         $token = encodeToken($openid, 60, $request->host); // 授权成功 用户生成token
-        $user->save($insertData);
-        self::userid($openid); // 分享机制 判断 用户是否为新注册
-        $insertData['token'] = $token;
-        // 上传数据库结束
-        return success(200, '登录成功', $insertData);
+
+//        try {
+//            $user->save($insertData);
+//
+//        } catch (\Exception $e) {
+//            if ($e->getCode() == 10501) {
+//                return error(304, '当前微信已绑定其他的手机号码', null);
+//            }
+//        }
+        $res = $user->save($insertData);
+        if ($res) {
+            self::userid($openid); // 分享机制 判断 用户是否为新注册
+            $insertData['token'] = $token;
+            // 上传数据库结束
+            return success(200, '登录成功', $insertData);
+        } else {
+            return error(304, '登录失败', $insertData);
+        }
+
+
     }
 
     // 验证是否存在userid 分享 机制
@@ -80,9 +99,10 @@ class User extends BaseController
     {
         $post = Request::post();
         Log::info($post);
+        Log::info("============================");
         $user = new \app\model\User();
         if (isset($post['userid'])) {
-            $res = $user->where('openid', $post['userid'])->field();
+            $res = $user->where('openid', $post['userid'])->find();
             if ($res) {
                 $userMap = Db::table('user_map');
                 $userMap->save(['z_openid' => $post['userid'], 'x_openid' => $openid]);
@@ -255,7 +275,7 @@ class User extends BaseController
 
         $token = decodeToken();
         // 收益金额
-        $orderCount = $order->where([['up_openid', '=', $token->id], ['flat', 'in', ['1','6']]])->sum('price');
+        $orderCount = $order->where([['up_openid', '=', $token->id], ['flat', 'in', ['1', '6']]])->sum('price');
         // 发布的线索数量
         $clueCount = $clue->where([['openid', '=', $token->id], ['flag', '=', 1]])->count();
         // 旧车

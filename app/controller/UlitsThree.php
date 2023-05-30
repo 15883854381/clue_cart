@@ -27,7 +27,6 @@ class UlitsThree
                 "time4" => ["value" => $date],
             ]
         ];
-        Log::info($data);
         $code_res = http::post($url, [], json_encode($data));
 
         return $code_res->body;

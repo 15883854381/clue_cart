@@ -3,6 +3,7 @@
 namespace app\model;
 
 use think\facade\Db;
+use think\facade\Log;
 use think\Model;
 
 class Clue extends Model
@@ -25,6 +26,7 @@ class Clue extends Model
                  LEFT JOIN t_province c ON  a.provinceID = c.id
                  LEFT JOIN t_city e ON  a.cityID = e.id
                  left JOIN user f ON a.openid = f.openid  WHERE a.clue_id ='${id}'";
+
         return Db::query($sql);
 
     }

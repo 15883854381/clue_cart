@@ -147,7 +147,7 @@ class Ulits extends BaseController
             $redis->set('t_province', $t_province, 7200);
         }
 
-        return success('200', '', $t_province);
+        return success('200', 're', $t_province);
     }
 
 

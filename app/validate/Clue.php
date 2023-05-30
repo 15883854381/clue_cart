@@ -64,6 +64,7 @@ class Clue extends Validate
     protected $scene = [
         "up" => ['user_name', 'phone_number', 'provinceID', 'cityID', 'cartType', 'CartBrandID'],
         "Clueup" => ['user_name', 'phone_number', 'unitPrice_1', 'unitPrice_2', 'unitPrice_3','sex'],
+        "batchUp"=>['phone_number','unitPrice_1','unitPrice_2','unitPrice_3']
     ];
 
     public function checkCsex($value)

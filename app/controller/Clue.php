@@ -189,12 +189,6 @@ class Clue extends BaseController
         } else {
             $res = $clue->ClueNotPhone($post['clue_id'], $post['type']);
         }
-//        // 结束
-//        if ($BuyOrder['flat'] == 1 || $BuyOrder['flat'] == 7) {
-//            $res = $clue->CluePhone($post['clue_id'], $post['type']);
-//        } else {
-//            $res = $clue->ClueNotPhone($post['clue_id'], $post['type']);
-//        }
 
         $clue_id = $post['clue_id'];
         $tags_sql = "SELECT tagName FROM tagsmap a LEFT JOIN tags b ON a.tags_id = b.id WHERE clue_id = '${clue_id}'";

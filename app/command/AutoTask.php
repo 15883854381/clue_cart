@@ -33,9 +33,10 @@ class AutoTask extends Command
         $force = trim($input->getArgument('force'));
         $task = new \EasyTask\Task();
         $task->setRunTimePath('./runtime/');
+        // 模板消息退推送任务
         $task->addFunc(function () {
             $hour = date('H');
-            $fruits = [9, 10, 11, 12, 14, 16, 18, 19];
+            $fruits = [8, 9, 10, 11, 12, 14, 16, 18, 19, 20, 21];
             if (!in_array($hour, $fruits)) {
                 return;
             }
@@ -43,6 +44,7 @@ class AutoTask extends Command
             $sendTemplate->sendTemplate();
 
         }, 'sendTemplate', 60 * 60, 1);
+        // 营销短信推送任务
         $task->addFunc(function () {
             $hour = date('H');
             $fruits = [11];

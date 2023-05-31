@@ -8,6 +8,13 @@ return [
         'serialNo' => '34A07035CA76B3A82927EE23FD31FED4F747854F', // 证数序列号
         'APIv3' => 'e10adc3949ba59abbe56e057f20f883e',
     ],
+//    'Weixin' => [
+//        'appid' => 'wxdcf354de383af42c',
+//        'appsecret' => '4395772d88f8aaf37691d2a7255e9f20',
+//        'merchantId ' => '1645854384', // 商户id
+//        'serialNo' => '2325BC2A09DAE28DF6A4ED6DA51DA692C455291A', // 证数序列号
+//        'APIv3' => 'e10adc3949ba59abbe56e057f20f883e',
+//    ],
     // 验证码
     'Code' => [
         'account' => 'YZM9536443', // 短信验证码

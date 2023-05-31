@@ -35,13 +35,16 @@ class OldCart extends BaseController
         $clue_id = Uuid::uuid6()->getHex()->toString();
         $token = decodeToken();
 
+        $k = 1;
         for ($i = 0; $i < $post['sales']; $i++) {
-            $post['unitPrice_' . ($i + 1)] = $post['unitPrice_' . $i];
+            $post['unitPrice_' . $k] = $post['unitPrice_' . ($i + 1)];
+            $k += 1;
         }
 
 
         $data = ['clue_id' => $clue_id, 'openid' => $token->id, 'PhoneBelongingplace' => $PhoneBelongingplace['area']];
         $updata = array_merge($data, $post);
+
         $res = $oldcart->save($updata);
         if (!$res) {
             return error(304, '上传线索失败，请核对数据后重新上传', null);
@@ -59,7 +62,6 @@ class OldCart extends BaseController
     private function updatavail()
     {
         $post = Request::post();
-        Log::info($post);
         // 验证数据
         try {
             validate(\app\validate\OldCart::class)->check($post);
@@ -79,7 +81,7 @@ class OldCart extends BaseController
         // 验证价格
         $pickNum = 0;
         $n = 1;
-        for ($i = 0; $i < $sales; $i++) {
+        for ($i = 1; $i <= $sales; $i++) {
 
             if (!array_key_exists("unitPrice_" . $i, $post)) {
                 return error('304', "请填写第【${n}】次价格", null);
@@ -90,7 +92,7 @@ class OldCart extends BaseController
             if ($post["unitPrice_" . $i] > 2000) {
                 return error('304', "第【${n}】次价格不能大于【2000】元", null);
             }
-            if ($i > 0) {
+            if ($i > 1) {
                 if ($pickNum < $post["unitPrice_" . $i]) {
                     return error('304', "第【${n}】次价格不能大于第【${i}】次 价格", null);
                 }

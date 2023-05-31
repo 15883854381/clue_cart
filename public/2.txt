@@ -1,1 +1,5 @@
-400
+php vendor/bin/CertificateDownloader.php  -k e10adc3949ba59abbe56e057f20f883e -m 1645854384 -f C:\Users\dell\Desktop\新建文件夹\新建文件夹 ()\apiclient_key.pem -s 2325BC2A09DAE28DF6A4ED6DA51DA692C455291A -o C:\Users\dell\Desktop
+
+
+
+php vendor/bin/CertificateDownloader.php -f public/apiclient_key.pem -k e10adc3949ba59abbe56e057f20f883e -m 1645854384 -o public -s 2325BC2A09DAE28DF6A4ED6DA51DA692C455291A

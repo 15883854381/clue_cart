@@ -236,6 +236,7 @@ class User extends BaseController
         $weixin = \think\facade\Config::get('WeixinConfig.Weixin');
         $res = file_get_contents('https://api.weixin.qq.com/sns/oauth2/access_token?appid=' . $weixin['appid'] . '&secret=' . $weixin['appsecret'] . '&code=' . $code . '&grant_type=authorization_code');
         $data = json_decode($res);
+        Log::info($res);
         // 验证授权是否成功
         if (isset($data->errcode)) {
             return false;

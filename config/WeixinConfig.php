@@ -29,7 +29,8 @@ return [
         'accesskey' => 'cheshoubang',
         'appSecret' => 'C71180F210F8B59C82CE13C1D0F1242E',
         'url' => 'http://open.goodsalescloud.com',
-        'TelX' => '03512929459'
+        'TelX' => '03512929459',
+        'NotifyUrl'=>'http://h.199909.xyz/'
     ],
     'Order' => [
         'Close' => 5 * 60,// 关闭交易时间  单位 s

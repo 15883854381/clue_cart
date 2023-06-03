@@ -115,7 +115,6 @@ class Admincustomer extends BaseController
         $url = sprintf($url, $access_token, 'image');
         $data = ['media' => new CURLFile($media)];
         $res = http_request_post($url, $data, $media);
-        Log::info($res);
         return $res;
     }
 

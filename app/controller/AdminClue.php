@@ -11,6 +11,7 @@ use think\facade\Request;
 use think\cache\driver\Redis;
 use think\facade\Log;
 use think\response\Json;
+use WpOrg\Requests\Requests as http;
 
 class AdminClue extends BaseController
 {
@@ -320,5 +321,148 @@ class AdminClue extends BaseController
         return $data;
     }
 
+
+    // 线索均分 给客服
+    function Clue_allocation()
+    {
+        $request = Request::instance();
+        if (!$request->isPost()) {
+            return error(304, '请求出错', null);
+        }
+        $post = $request->post();
+        if (!isset($post['userid'])) {
+            return error(304, '参数错误', null);
+        }
+        $user_list = explode(',', $post['userid']); // 此处以后需要做安全验证  判断数据库是否存在这些数据
+
+
+        $sql = "SELECT a.clue_id FROM clue a LEFT JOIN admin_customer b ON a.clue_id = b.clue_id WHERE b.clue_id is null AND a.flag = 2";
+        $res = Db::query($sql);
+
+        $resCount = count($res);
+        $userListCount = count($user_list);
+
+        if ($resCount <= 0) {
+            return error(304, "以无可以分配的线索", null);
+        }
+        if ($userListCount > $resCount) {
+            return error(304, "当前选中的客服数量【大于】 线索数量，不能平均分配线索", null);
+        }
+
+        //region description 均分算法
+
+        // 数组均分算法 将数据平均分配给 用户 不能整除的分配给最后一个用户
+        $arr = [];
+        $user_num = 0;// 取user 数组
+        $item_num = intval($resCount / $userListCount); // 每个人的数量
+        for ($i = 1; $i <= $userListCount; $i++) {
+            $pagecount = ($i - 1) * $item_num;
+            $new_mini = [];
+            if ($i == $userListCount) {
+                $mini_arr = array_slice($res, $pagecount, $resCount); // 最后一次循环 将所有的数据添加到 最后一个用户
+            } else {
+                $mini_arr = array_slice($res, $pagecount, $item_num);
+            }
+            foreach ($mini_arr as $item) {
+                $item['admin_id'] = $user_list[$user_num];
+                $new_mini[] = $item;
+            }
+            $user_num += 1;
+            $arr[] = $new_mini;
+        }
+        //endregion
+
+        // 已分配完成 上传数据
+        $adminCustomer = new \app\model\adminCustomer();
+        foreach ($arr as $item) {
+            $adminCustomer->insertAll($item);
+        }
+
+
+        return success(200, '分配完成', $arr);
+
+
+    }
+
+
+    // 外呼线索列表 ========================
+
+    // 线索列表审核
+    function Clue_list_Audit()
+    {
+        $adminClue = new \app\model\AdminClue();
+        $res = $adminClue->outbound_clue();
+        if (!$res) {
+            return error(304, '没有数据', null);
+        }
+        return success(200, '获取成功', $res);
+
+    }
+
+    // 审核线索拨打电话
+    function Clue_CallPhone()
+    {
+        $token = decodeToken();
+        if (!$token) {
+            return error(304, '非法访问', null);
+        }
+
+        $request = Request::instance();
+        if (!$request->isPost()) {
+            return error(304, '请求出错', null);
+        }
+
+        $post = $request->post();
+        if (!isset($post['clue_id'])) {
+            return error(304, '参数错误', null);
+        }
+
+
+        $clue = new \app\model\Clue();
+        $res = $clue->where('clue_id', $post['clue_id'])->find();
+        if (!$res) {
+            return error(304, '没有数据', null);
+        }
+
+        $phone = \think\facade\Config::get('WeixinConfig.phone');
+        $updata = [
+            "AccessKey" => $phone['accesskey'],
+            "TelA" => $token->id,//主动发起人
+            "TelX" => $phone['TelX'],// 中间人
+            "TelB" => $res['phone_number'],// 被动发起人
+            "Expiration" => 15,
+            "NotifyUrl" => $phone['NotifyUrl'] . 'CluePhoneNotifyUrl/' . $res['clue_id'],
+            "Signature" => strtoupper(md5($phone['accesskey'] . $token->id . $phone['TelX'] . $res['phone_number'] . $phone['appSecret']))
+        ];
+        $response = http::post($phone['url'] . '/api/call/bind', [], $updata);
+        $res = json_decode($response->body, true);
+        if ($res['code'] != 0) {
+            return error(304, $res['msg'], null);
+        }
+        return success(200, '电话接通中,请注意接听', null);
+    }
+
+    // 电话接通后的回调地址 Clue_CallPhone
+    function Clue_Phone_NotifyUrl($clueId)
+    {
+        try {
+            $request = Request::instance()->post();
+            $request['out_trade_no'] = $clueId;// 此处的 out_trade_no 为线索ID
+            if ($request['bind_id']) {
+                Db::table('notifyurl')->save($request);
+                return json(["code" => "0", "message" => "success"]);
+            }
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+        }
+    }
+    
+    // 线索详情
+    function Clue_Item_Detail()
+    {
+        
+    }
+    
+    
 
 }

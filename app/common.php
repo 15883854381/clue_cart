@@ -69,7 +69,7 @@ function decodeToken($token = null)
  * @param string $expTime token 失效时间 单位分钟
  * @param string $ip token 用户ip 可不填写
  */
-function encodeToken($openid, $expTime = 1440, $ip = '')
+function encodeToken($openid, $expTime = 1440, $ip = '', $note = [])
 {
     // token 加密
     $jwt = new JWT();
@@ -82,6 +82,7 @@ function encodeToken($openid, $expTime = 1440, $ip = '')
         'nbf' => $time, // 生效时间
         'iat' => $time, //签发时间
         'id' => $openid, // 用户id
+        'note' => $note
     ];
     $token = $jwt::encode($payload, $key, 'HS256');
     return $token;

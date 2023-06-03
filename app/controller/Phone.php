@@ -52,7 +52,6 @@ class Phone extends BaseController
         }
 
         $r = $order->where('out_trade_no', $data['out_trade_no'])->dec('callPhoneNumber', 1)->update();
-        Log::info($r);
         return success(200, '回拨线路接通中请注意接听', null);
     }
 

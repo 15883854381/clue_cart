@@ -95,9 +95,9 @@ class Ulits extends BaseController
         $tpSms->mobile($post['phone_number']);
         $tpSms->code($post['code']);
         if (!$tpSms->check()) {
-            return error(304, '验证码错误', $tpSms->getErrorMsg());
+            return false;
         } else {
-            return success(200, '通过验证', null);
+            return true;
         }
     }
 

@@ -25,7 +25,13 @@ class Clue extends Validate
         'unitPrice_2' => 'number|integer', // 第二次价格
         'unitPrice_3' => 'number|integer', // 第三次价格
         'sex' => 'require|number|checkCsex', // 性别
-        'sales' => 'require|number'// 售卖次数
+        'sales' => 'require|number',// 售卖次数
+
+        'clue_id' => 'require',
+        'flag' => 'require|number',
+        'notifyurlid' => 'require|number',
+
+
     ];
 
     /**
@@ -58,13 +64,22 @@ class Clue extends Validate
         "unitPrice_2.integer" => '金额应为整数',
         "unitPrice_3.number" => '金额应为数字',
         "unitPrice_3.integer" => '金额应为整数',
+
+        "clue_id.require" => "参数错误",
+        "flag.require" => "参数错误",
+        "flag.number" => "参数错误",
+        "notifyurlid.require" => "参数错误",
+        "notifyurlid.number" => "参数错误"
+
+
     ];
 
     //验证场景
     protected $scene = [
         "up" => ['user_name', 'phone_number', 'provinceID', 'cityID', 'cartType', 'CartBrandID'],
-        "Clueup" => ['user_name', 'phone_number', 'unitPrice_1', 'unitPrice_2', 'unitPrice_3','sex'],
-        "batchUp"=>['phone_number','unitPrice_1','unitPrice_2','unitPrice_3']
+        "Clueup" => ['phone_number', 'unitPrice_1', 'unitPrice_2', 'unitPrice_3', 'sex'],
+        "batchUp" => ['phone_number', 'unitPrice_1', 'unitPrice_2', 'unitPrice_3'],
+        "edit" => ['sex', 'cityID', 'CartBrandID', 'provinceID', 'notifyurlid', 'flag'],
     ];
 
     public function checkCsex($value)

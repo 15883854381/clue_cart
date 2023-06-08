@@ -22,4 +22,4 @@ Route::post('CallingPhone', 'Phone/CallingPhone');// 查询订单 当前用户�
 Route::any('notify/:name', 'Order/notify');// 查询订单 当前用户的 点订单数据
 Route::post('NotifyUrl/:outTradeNo', 'Phone/NotifyUrl');// 查询订单 当前用户的 点订单数据
 
-Route::post('CluePhoneNotifyUrl/:clueId', 'AdminClue/Clue_Phone_NotifyUrl');// 外呼审核同话录音
+Route::post('/CluePhoneNotifyUrl/:clueId', 'AdminClue/Clue_Phone_NotifyUrl');// 外呼审核同话录音

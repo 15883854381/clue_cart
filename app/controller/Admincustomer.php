@@ -82,27 +82,28 @@ class Admincustomer extends BaseController
     {
         $token = decodeToken();
         $request = Request::domain(1);
-        if (!$token){
+        if (!$token) {
             $row = Db::table('customer')->where('region', '0')->find();
             $row['WatchCode'] = $request . '/' . 'storage' . '/' . $row['WatchCode'];
             return success(200, '没有专属客服', $row);
         }
 
 
+        // 此处判断用户是否有地区
         $res = Db::table('user')->where('openid', $token->id)->field('area')->find();
-        if (!$res || empty($res['area'])) {
+        Log::error($res);
+        if (!isset($res['area'])) {
             $row = Db::table('customer')->where('region', '0')->find();
             $row['WatchCode'] = $request . '/' . 'storage' . '/' . $row['WatchCode'];
             return success(200, '没有专属客服', $row);
         }
 
-        $row = Db::table('customer')->when(empty($res['area']),
-            function ($query) {
-                $query->where('region', '0');
-            }, function ($query) use ($res) {
-                $query->where([['region', 'like', '%' . $res['area'] . '%']]);
-            })->where('flag', 1)->find();
-
+        // 判断是否有此地区的 客服
+        $row = Db::table('customer')->where([['region', 'like', '%' . $res['area'] . '%'], ['flag', '=', 1]])->find();
+        // 没有查询到 此地区的客服 便直接使用 全部客服
+        if (!$row) {
+            $row = Db::table('customer')->where('region', '0')->find();
+        }
         $row['WatchCode'] = $request . '/' . 'storage' . '/' . $row['WatchCode'];
         return success(200, '1233', $row);
     }

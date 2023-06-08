@@ -3,6 +3,7 @@
 namespace app\controller;
 
 use app\BaseController;
+use think\facade\Config;
 use think\facade\Request;
 use WpOrg\Requests\Requests as http;
 use WeChatPay\Formatter;
@@ -21,28 +22,32 @@ class Payment
     private $serialNo = '34A07035CA76B3A82927EE23FD31FED4F747854F';  // 「商户API证书」的「证书序列号」
     private $wechatpayCert = 'file://' . '/website/Server/tp/public/wechatpay/wechatpay_32E3709A8EBC2F806A4737C526AB5E5911D9E0BF.pem'; //微信支付平台证书
     private $openid = 'oCSg36mgTy7jNS-AFgk1HAyJSBLY'; // openid
+    private $notify_url = '';
+
+
+    public function __construct()
+    {
+        $Weixin = Config::get('WeixinConfig.Weixin');
+        $this->appid = $Weixin['appid'];
+        $this->secret = $Weixin['appsecret'];
+        $this->mchid = $Weixin['merchantId'];
+        $this->serialNo = $Weixin['serialNo'];
+        $this->keyCert = $Weixin['keyCert'];
+        $this->wechatpayCert = $Weixin['wechatpayCert'];
+        $this->notify_url = $Weixin['notify_url'];
+
+    }
 
 
     public function getPrepayId($datas)
     {
 
 
-//        $data = [
-//            'appid' => $this->appid, //公众号的服务号APPID
-//            'mchid' => $this->mchid, //商户号
-//            'description' => '哈喽吧1分礼品号', //商品描述
-//            'out_trade_no' => date('Ymd') . substr(implode(NULL, array_map('ord', str_split(substr(uniqid(), 7, 13), 1))), 0, 8), //商户订单号
-//            'attach' => 'ceshi_' . time(), //附加数据,在查询API和支付通知中原样返回
-//            'notify_url' => 'http://h.199909.xyz/Payment/notify?a=1', //异步接收微信支付结果通知的回调地址
-//            'amount' => ['total' => 0.1 * 100], //订单总金额，单位为分
-//            'payer' => ['openid' => $this->openid]  //用户标识,用户在直连商户appid下的唯一标识
-//        ];
-
         $data = [
             'appid' => $this->appid, //公众号的服务号APPID
             'mchid' => $this->mchid, //商户号
             'attach' => 'ceshi_' . time(), //附加数据,在查询API和支付通知中原样返回
-            'notify_url' => 'http://h.199909.xyz/notify/' . $datas['out_trade_no'], //异步接收微信支付结果通知的回调地址
+            'notify_url' => $this->notify_url . 'notify/' . $datas['out_trade_no'], //异步接收微信支付结果通知的回调地址
         ];
         $data = array_merge($data, $datas);
 
@@ -119,7 +124,7 @@ class Payment
         $dasta = [
             'transaction_id' => $data['transaction_id'], // 微信支付订单号
             'out_refund_no' => $data['out_refund_no'], // 商户退款单号
-            'notify_url' => "http://h.199909.xyz/AdminOrder/verify_refund",// 回调地址
+            'notify_url' => $this->notify_url . "AdminOrder/verify_refund",// 回调地址
             'funds_account' => 'AVAILABLE',
             'amount' => [
                 'refund' => $data['price'] * 100, // 退款金额
@@ -163,7 +168,7 @@ class Payment
             // 进行错误处理
             echo $e->getMessage(), PHP_EOL;
             if ($e instanceof \GuzzleHttp\Exception\RequestException && $e->hasResponse()) {
-             $r = $e->getResponse();
+                $r = $e->getResponse();
                 echo $r->getStatusCode() . ' ' . $r->getReasonPhrase(), PHP_EOL;
                 echo $r->getBody(), PHP_EOL, PHP_EOL, PHP_EOL;
             }
@@ -220,7 +225,6 @@ class Payment
         ), 'signType' => 'RSA'];
         return $params;
     }
-
 
 
 }

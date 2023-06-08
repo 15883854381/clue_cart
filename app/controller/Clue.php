@@ -180,7 +180,10 @@ class Clue extends BaseController
         Log::info($BuyOrder);
 
         if (isset($BuyOrder['flat'])) {
-            if ($BuyOrder['flat'] == 1 || $BuyOrder['flat'] == 6) {
+
+            $ifData = [1, 3, 5, 6];
+
+            if (in_array($BuyOrder['flat'], $ifData)) {
                 $res = $clue->CluePhone($post['clue_id'], $post['type']);
             } else {
                 $res = $clue->ClueNotPhone($post['clue_id'], $post['type']);
@@ -308,13 +311,10 @@ class Clue extends BaseController
 
             $pickNum = $post["unitPrice_" . $n];
         }
-        Log::info($post);
         //  验证价格是否填写正确 === 结束
         $field = array_merge(['openid', 'user_name', 'clue_id', 'sex', 'phone_number', 'CartBrandID', 'provinceID', 'cityID', 'PhoneBelongingplace', 'sales'], $pickArr);
         //上传
         $res = $clue->allowField($field)->save($post);
-        Log::info($res);
-
 
         if ($res) {
             if (isset($post['userTags'])) {
@@ -424,6 +424,49 @@ class Clue extends BaseController
 
         return success(200, '手机正确', null);
     }
+
+
+    // 查询线索的通话录音
+    public function DetailPhoneRecording()
+    {
+        $post = Request::post();
+
+        $Recording = Db::table('notifyurl');
+        $res = $Recording->where([['out_trade_no', '=', $post['clue_id']], ['status', '=', 1]])->field('record_file_url')->find();
+        if (!$res) {
+            return error(304, '当前线索没有通话录音', null);
+        }
+        return success(200, '获取成功', $res);
+
+    }
+
+
+    // 用户后台管理查看线索
+    public function AdminClueDataList()
+    {
+
+        $post = Request::post();
+        $pageSize = $post['pageSize'] ?? 10;
+        $pageNumber = $post['pageNumber'] ?? 1;
+        $pageCount = ($pageNumber - 1) * $pageSize;
+        $token = decodeToken();
+        $sql = "SELECT 
+                    province,city,cart_type,user_name,sex,phone_number,a.createtime,flag,sales,Tosell,unitPrice_1,unitPrice_2,unitPrice_3
+                FROM 
+                    (SELECT * FROM clue UNION SELECT * FROM  clue_old) a
+                LEFT JOIN 
+                    (SELECT t_city.id,t_province.name as province,t_city.name as city FROM t_province LEFT JOIN t_city ON t_province.id = t_city.province_id) as c 
+                ON c.id = a.cityID WHERE openid = '$token->id' ORDER BY createtime DESC LIMIT  $pageCount ,$pageSize";
+
+        $clue = new \app\model\Clue();
+        $total = $clue->where('openid', $token->id)->count();
+        $res = Db::query($sql);
+        if (!$res) {
+            return error(304, '你还没有上传线索', null);
+        }
+        return success(200, '获取成功', ['data' => $res, 'total' => $total]);
+    }
+
 
     public function hello($name = 'ThinkPHP6')
     {

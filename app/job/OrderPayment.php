@@ -19,8 +19,10 @@ class OrderPayment
             (new Payment())->closeOutTradeNo($data['out_trade_no']);
             $Order->where('out_trade_no', $data['out_trade_no'])->update(['flat' => 8]);
             Db::table($type)->where('clue_id', $data['clue_id'])->dec('Tosell', $res['buy_num'])->update();
+            echo '我执行了取消订单';
+        } else {
+            echo '我没有执行取消订单';
         }
-        echo '我执行了取消订单';
         $job->delete();
 
         //....这里执行具体的任务

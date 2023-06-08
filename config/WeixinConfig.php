@@ -4,9 +4,12 @@ return [
     'Weixin' => [
         'appid' => 'wx1db4af9dd7f6371f',
         'appsecret' => '9aa5ad7b6b2f6d221a83769ab8c14ea9',
-        'merchantId ' => '1643243881', // 商户id
+        'merchantId' => '1643243881', // 商户id
         'serialNo' => '34A07035CA76B3A82927EE23FD31FED4F747854F', // 证数序列号
         'APIv3' => 'e10adc3949ba59abbe56e057f20f883e',
+        'keyCert'=>'file://' . '/website/Server/tp/public/wechatpay/apiclient_key.pem',
+        'wechatpayCert'=>'file://' . '/website/Server/tp/public/wechatpay/wechatpay_32E3709A8EBC2F806A4737C526AB5E5911D9E0BF.pem', //微信支付平台证书
+        'notify_url'=>'http://h.199909.xyz/'
     ],
 //    'Weixin' => [
 //        'appid' => 'wxdcf354de383af42c',
@@ -29,7 +32,7 @@ return [
         'accesskey' => 'cheshoubang',
         'appSecret' => 'C71180F210F8B59C82CE13C1D0F1242E',
         'url' => 'http://open.goodsalescloud.com',
-        'TelX' => '03512929459',
+        'TelX' => '2825054693',
         'NotifyUrl'=>'http://h.199909.xyz/'
     ],
     'Order' => [

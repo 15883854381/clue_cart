@@ -18,20 +18,9 @@ class Test
 {
     public function index()
     {
-//        $fruits = array('apple', 'orange', 'banana', 'grape');
-//        if (in_array('orange', $fruits)) {
-//            echo '存在';
-//        } else {
-//            echo '不存在';
-//        }
-        $hour = date('H');
-        $fruits = [9, 10,11,12, 14, 16, 18, 19];
-        if (!in_array($hour, $fruits)) {
-            echo  '不存在';
-        }else{
-            echo '存在';
-        }
-
+        $times = date('Y-m-d', strtotime('2022-05-06 12:25:23'));
+        echo date('Y-m-d');
+        echo $times;
 
     }
 

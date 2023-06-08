@@ -59,7 +59,6 @@ class AdminOrder extends BaseController
         }
 
         $data = self::verify($post['id']);
-        Log::info($data);
         if (!$data) {
             return error(304, '此用户不具备退款条件', null);
         }
@@ -146,8 +145,6 @@ class AdminOrder extends BaseController
         $post = Request::instance()->post();
         $res = DB::table('notifyurl')->where('out_trade_no', $post['out_trade_no'])->select();
         return success(200, '', $res);
-
-
     }
 
 

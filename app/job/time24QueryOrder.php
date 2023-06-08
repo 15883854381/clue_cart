@@ -16,9 +16,11 @@ class time24QueryOrder
         $res = $Order->where('transaction_id', $data['transaction_id'])->find();
         if ($res['flat'] == 3 or $res['flat'] == 4) {
             $Order->update(['flat' => 1]);
+            echo '交易成功，我修改了';
+        } else {
+            echo '交易成功，但未作修改';
         }
-        Log::info($data);
-        echo '交易成功，我修改了';
+
 
         $job->delete();
 

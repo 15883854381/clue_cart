@@ -7,15 +7,13 @@ namespace app\middleware;
 // 数据库
 use Firebase\JWT\JWT;
 use  Firebase\JWT\key;
+use think\Log;
 
 class CheckToken
 {
     /**
      * 处理请求
      *
-     * @param \think\Request $request
-     * @param \Closure $next
-     * @return Response
      */
     public function handle($request, \Closure $next)
     {
@@ -40,15 +38,26 @@ class CheckToken
             '/Ulits/city',
             '/Ulits/CarBrand',
             '/Clue/SearchClueBuyNUm',
-            '/AdminLogin/login'
+            '/AdminLogin/login',
+            '/AdminClue/Clue_Phone_NotifyUrl',// 外呼回调地址
+            '/Clue/DetailPhoneRecording',// 公众号详情页通话录音
+            '/AdminClue/timingEdit',
+            '/Test/index'
+
         ];
+
+
         $controller = $request->controller(); // controller
         $action = $request->action(); // action
         $url = '/' . $controller . '/' . $action;
 
+
+        // 如果在数组中 存在则不需要做登录验证
         if (in_array($url, $exceptController)) {
             return $next($request);
         }
+
+        // 做登录验证
         // 获取token
         $token = $request->header('token');
         // return $token;

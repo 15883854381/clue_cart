@@ -39,7 +39,7 @@ class Phone extends BaseController
             "TelX" => $phone['TelX'],// 中间人
             "TelB" => $data['telB'],// 被动发起人
             "Expiration" => 15,
-            "NotifyUrl" => "http://h.199909.xyz/NotifyUrl/" . $data['out_trade_no'],
+            "NotifyUrl" => $phone['NotifyUrl'] . "NotifyUrl/" . $data['out_trade_no'],
             "Signature" => strtoupper(md5($phone['accesskey'] . $data['telA'] . $phone['TelX'] . $data['telB'] . $phone['appSecret']))
         ];
 
@@ -71,6 +71,7 @@ class Phone extends BaseController
         }
     }
 
+    // 用户 查询出线索的 号码 和登录 用户的号码 使用登录号码拨打电话
     private function selectPhone()
     {
         $user = new \app\model\User();
@@ -100,6 +101,5 @@ class Phone extends BaseController
         return $res;
 
     }
-
 
 }

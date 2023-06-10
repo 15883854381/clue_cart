@@ -22,7 +22,7 @@ class AdminLogin extends BaseController
             return error(304, '参数错误', null);
         }
         $note = [];
-        $tokenId= '';
+        $tokenId = '';
         if ($post['login_type'] == '1') {
             // TODO 此处需要判断是否在数据库中
             // 个人、企业
@@ -39,8 +39,12 @@ class AdminLogin extends BaseController
             $user = new User();
             $res = $user->where('phone_number', $post['phone_number'])->find();
             if (!$res) {
-                return error(304, '登录失败，此用户不存在，请在微信公众号注册',null);
+                return error(304, '登录失败，此用户不存在，请在微信公众号注册', null);
             }
+            if ($res['flas'] != 1) {
+                return error(304, '你的资料正在审核中或者未通过审核', null);
+            }
+
 
             $tokenId = $res['openid'];
             $note['id'] = $res['openid']; // 用户的id

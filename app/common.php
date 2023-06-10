@@ -51,12 +51,13 @@ function decodeToken($token = null)
             // TODO 判断时间是否在有效期类 
             $data = JWT::decode($token, new Key($key, 'HS256'));
             // 判断 token 是否超过有效期
-            if (time() > $data->exp) {
-                // return error(304, '登录过期，请重新登录', null);
-                return false;
-            } else {
-                return $data;
-            }
+//            if (time() > $data->exp) {
+//                // return error(304, '登录超时，请重新登录', null);
+//                return false;
+//            } else {
+//                return $data;
+//            }
+            return $data;
         } catch (Exception $e) {
             // return error(304, '登录失败', $e);
             return false;

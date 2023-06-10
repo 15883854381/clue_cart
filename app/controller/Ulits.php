@@ -378,5 +378,21 @@ class Ulits extends BaseController
         return $data['data'][0];
     }
 
+    // 模糊查询汽车品牌
+    public function FuzzyQueriesCarBrand($brand)
+    {
+        $sql = "select b_id,b_name from carhouse_car_info where   c_series_name like '%$brand%'  LIMIT 1";
+        return Db::query($sql);
+
+    }
+
+
+    // 模糊查询城市省市
+    public function FuzzyQueriesCity($City)
+    {
+        $sql = "SELECT CONCAT(a.name,b.name) as city,b.province_id,b.id  FROM t_province a  LEFT JOIN t_city b ON a.id = b.province_id HAVING city LIKE '%$City%'";
+        return Db::query($sql);
+    }
+
 
 }

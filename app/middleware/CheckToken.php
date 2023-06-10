@@ -42,6 +42,8 @@ class CheckToken
             '/AdminClue/Clue_Phone_NotifyUrl',// 外呼回调地址
             '/Clue/DetailPhoneRecording',// 公众号详情页通话录音
             '/AdminClue/timingEdit',
+            '/WeiXinUlits/sendTemplate',
+            '/WeiXinUlits/pushInfo',
             '/Test/index'
 
         ];

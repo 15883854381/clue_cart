@@ -5,6 +5,7 @@ namespace app\controller;
 use app\BaseController;
 use app\controller\Ulits;
 use think\App;
+use think\facade\Config;
 use think\facade\Db;
 use think\facade\Log;
 use think\facade\Request;
@@ -19,11 +20,12 @@ class WXMenu extends BaseController
         $ulite = new Ulits($this->app);
         $access_token = $ulite->GetAccess_token();
         $url = 'https://api.weixin.qq.com/cgi-bin/menu/create?access_token=' . $access_token;
+        $weixin = Config::get('WeixinConfig.Weixin');
         $data = [
             "button" => [
                 [
                     "name" => "汽车线索",
-                    "url" => "http://e.199909.xyz/",
+                    "url" => $weixin['notify_url'],
                     "type" => "view",
 
                 ],

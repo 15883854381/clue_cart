@@ -117,10 +117,12 @@ class Clue extends BaseController
                                 ROUND(100 / sales * Tosell) as progress,
                                 (UNIX_TIMESTAMP(createtime)*1000) as createtime,
                                 (CASE Tosell WHEN 0 THEN unitPrice_1  WHEN 1 THEN unitPrice_2 ELSE unitPrice_3 END) as Price,
-                                upClueNum,IFNULL(notes_name,nickname) as nclueName FROM clue a 
+                                IFNULL(notes_name,nickname) as nclueName ,h.total as upClueNum,h.allTotal,CEIL(((h.total/h.allTotal)*100)) as percentage 
+																FROM clue a 
                                 LEFT JOIN t_car_brand b ON a.CartBrandID = b.id
                                 LEFT JOIN t_province c ON  a.provinceID = c.id
                                 LEFT JOIN t_city e ON  a.cityID = e.id
+																LEFT JOIN (SELECT g.openid, COUNT(CASE WHEN g.flag = 1 THEN 1 END) as total,COUNT(g.openid) as allTotal  FROM clue g GROUP BY openid) h ON h.openid = a.openid
                                 left JOIN user f ON a.openid = f.openid where $where ORDER BY createtime DESC  LIMIT $pageCount,$pageSize  ";
         $version = Db::query($sql);
 

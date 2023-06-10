@@ -1,4 +1,0 @@
- <xml>
-    <ToUserName><![CDATA[gh_0ff847340ea1]]></ToUserName>
-    <Encrypt><![CDATA[PV4glJrGxYQK9hcogqKZTYRE4CwdKXtLqHjgLyNViRSHTHL2d5Yp732R/l+r1Ob0882ROZdfHrqsCp2VKi6GRr391OWPCrIgCThhT7aK+joezXVp6fV7CapucfUkQT9Ds2txEXZvmRtL7ug275PAAOFbohzs84d39hdedwLeuB9UClwvIeycyilbfGTk3RbrjRW2namf4gZ1aCz3lmNZU36/xEBurd/I7pPB0ubIhfccOIbizJxyheaVQ7KhnFHy82FvvKLkC9WU2nqTEl7EhK6Om6n0WMeL4e/115mekayMOFCI95dWVlNhr0TMENUyqM6c2FbWded0paAbaOMYWikO9wkIch+BzXJkpIC9IRuFzBxfaefbrpgIucA2fPeqSy4cbTyDf0HMtDmcf4TbmXBpXEoxIsF9sCcuhl0UukC8GcibwEsFVFbtObY9BMER8pC1BzlHcn5Es4hPbiCpVQ==]]></Encrypt>
-</xml>

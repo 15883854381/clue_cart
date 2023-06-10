@@ -90,7 +90,6 @@ class AdminClue extends BaseController
 
     }
 
-
     // 批量上传
     function batchUp()
     {
@@ -106,8 +105,6 @@ class AdminClue extends BaseController
             return error(304, '上传失败', null);
         }
         $token = decodeToken();
-        //  数据是正常的
-
 
         $phoneNumber = [];
         $UpDataArray = [];
@@ -160,6 +157,9 @@ class AdminClue extends BaseController
             return array('code' => 1, 'mes' => '该手机号码已存在', 'data' => $item);
         }
 
+        if(empty($item['cart_type'])){
+            return array('code' => 1, 'mes' => '没有定义线索类型 1 表示新车  2 表示二手车', 'data' => $item);
+        }
 
         // 验证价格 和 售卖次数
 
@@ -242,10 +242,15 @@ class AdminClue extends BaseController
                         continue;
                     }
                     if ($item == $it['clue_id']) {
+                        $CityAndBrand = [];
+                        // 获取城市 ID
+                        if (!empty($it['buyCarCity']) || !empty($it['carBrand'])) {
+                            $CityAndBrand = $this->CityOrBrand($it['buyCarCity'], $it['carBrand']);
+                        }
                         if ($it['cart_type'] == 1) {
-                            $new_cart[] = $it;
+                            $new_cart[] = array_merge($it, $CityAndBrand);
                         } elseif ($it['cart_type'] == 2) {
-                            $old_cart[] = $it;
+                            $old_cart[] = array_merge($it, $CityAndBrand);
                         }
                     }
                 }
@@ -257,14 +262,21 @@ class AdminClue extends BaseController
                     continue;
                 }
                 if ($it['error_type'] == 1) continue;
+                $CityAndBrand = [];
+                if (!empty($it['buyCarCity']) || !empty($it['carBrand'])) {
+                    $CityAndBrand = $this->CityOrBrand($it['buyCarCity'], $it['carBrand']);
+                }
                 if ($it['cart_type'] == 1) {
-                    $new_cart[] = $it;
+                    $new_cart[] = array_merge($it, $CityAndBrand);
                 } elseif ($it['cart_type'] == 2) {
-                    $old_cart[] = $it;
+                    $old_cart[] = array_merge($it, $CityAndBrand);
                 }
             }
         }
 
+        if (empty($new_cart) && empty($old_cart)) {
+            return error(304, '没有数据', null);
+        }
 
         $clue = new \app\model\Clue();
         $oldClue = new \app\model\OldCart();
@@ -298,6 +310,31 @@ class AdminClue extends BaseController
     }
 
 
+    // 获取城市 和 品牌的id
+    private function CityOrBrand($buyCarCity, $carBrand)
+    {
+        $ulits = new Ulits($this->app);
+        $data = ['provinceID' => null, 'cityID' => null, 'CartBrandID' => null];
+        if (!empty($buyCarCity)) {
+            $res = $ulits->FuzzyQueriesCity($buyCarCity);
+            if ($res) {
+                $data['provinceID'] = $res[0]['province_id'];
+                $data['cityID'] = $res[0]['id'];
+            }
+        }
+        // 获取品牌的 ID
+        if (!empty($carBrand) && preg_match("/[\x7f-\xff]/", $carBrand)) {
+
+            $res = $ulits->FuzzyQueriesCarBrand($carBrand);
+            if ($res) {
+                $data['CartBrandID'] = $res[0]['b_id'];
+            }
+        }
+
+        return $data;
+    }
+
+
     // 解析excel 数据
     function ReadExcel($file)
     {
@@ -309,12 +346,13 @@ class AdminClue extends BaseController
             'user_name' => '姓',
             'phone_number' => '手机号码',
             'sex' => '性别',
-//            'sales' => '售卖次数',
             'Price_1' => '【1】次价',
             'Price_2' => '【2】次价',
             'Price_3' => '【3】次价',
             'PhoneBelongingplace' => '号码归属地',
             'cart_type' => '汽车类型',
+            'buyCarCity' => '购车地区',
+            'carBrand' => '汽车品牌',
         ];
         $title = [];
         $data = [];
@@ -665,7 +703,6 @@ class AdminClue extends BaseController
     public function timingEdit()
     {
         $sql = "SELECT openid,DATE_FORMAT(createtime, '%Y-%m-%d') as createtime FROM  (SELECT * FROM  clue UNION SELECT * FROM clue_old) a  WHERE flag = 4 GROUP BY openid ,createtime";
-        Log::error($sql);
         $UserTime = Db::query($sql); // 查询有待上线线索的用户 和 日期
         if (!$UserTime) {
             return false;
@@ -683,7 +720,6 @@ class AdminClue extends BaseController
             $sql = "SELECT COUNT(id) as total FROM  (SELECT * FROM  clue UNION SELECT * FROM clue_old) a  WHERE createtime BETWEEN '${item['startTime']}' and '${item['endTime']}' and openid = '${item['openid']}'";
             $isFlagSql = $sql . ' and flag = 2'; // 查询所有 状态 等于 2 的线索
             $res = Db::query($isFlagSql); // COUNT
-            Log::error($res);
             // 如果此处有等于 2 的数据 就跳出
             if ($res[0]['total'] > 0) {
                 continue;

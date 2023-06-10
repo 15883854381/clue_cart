@@ -10,24 +10,48 @@ use WpOrg\Requests\Requests as http;
 // 不继承 BaseContrpller
 class UlitsThree
 {
-    public function sendWeiXinTempleat_notConter($item, $count, $date, $brand)
+    /**
+     * @param $item 用户信息
+     * @param $count 品牌数量
+     * @param $date 日期
+     * @param $brand // 数据
+     * @return string
+     */
+    public function sendWeiXinTempleat_notConter($item, $count, $date, $data)
     {
         $access_token = self::GetAccess_token_notConter();
         $url = "https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=" . $access_token;
 
-        $data = [
+        $weixin = Config::get('WeixinConfig.Weixin');
+        // 汽车共享联盟
+        $updata = [
             'touser' => $item['openid'],
             'template_id' => '-Jv0Adc4A5cyiCNq0fPmJb8d_qeY_sYUlc4SM_T_-xU',
             'appid' => 'wxf02c02843479d12a',
-            "url" => "http://e.199909.xyz/",
+            "url" => $weixin['Cline_url'],
             "data" => [
                 "thing1" => ["value" => $item['nickname']],
-                "thing2" => ["value" => "【" . $brand . "】"],
+                "thing2" => ["value" => "【" . $data . "】"],
                 "thing3" => ["value" => "新出线索【${count}】条供你挑选"],
                 "time4" => ["value" => $date],
             ]
         ];
-        $code_res = http::post($url, [], json_encode($data));
+        // 汽车共享助手
+//        $sex = $data['sex'] == 1 ? '先生' : '女士';
+//        $updata = [
+//            'touser' => $item['openid'],
+//            'template_id' => $weixin['template_id'],
+//            'appid' => $weixin['appid'],
+//            "url" => $weixin['Cline_url'],
+//            "data" => [
+//                "first" => '最新线索通知',
+//                "name" => ["value" =>$data['user_name'] . $sex],
+//                "sex" => ["value" => $data['sex'] == 1 ? '男' : '女'],
+//                "tel" => ["value" => substr_replace($data['phone_number'], '*', 3, 4)],
+//                "remark" => ["value" => $data['user_name'] . "先生最近有购车意向，请留意此线索。发布于：" . $date],
+//            ]
+//        ];
+        $code_res = http::post($url, [], json_encode($updata));
 
         return $code_res->body;
     }

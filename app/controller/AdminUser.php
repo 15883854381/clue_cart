@@ -63,7 +63,8 @@ class AdminUser extends BaseController
 
             $userProcess = new UserProcess();
             $userProcess->where('openid', $post['id'])->save(['flag' => $post['flas']]);
-            Log::info($updata);
+
+            $updata['authority'] = $post['type'] == 2 ? 6 : 8; // 此处修改用户角色 目前只有 2个角色
 
             $res = $user->where('openid', $post['id'])->update($updata);
             if ($res) {

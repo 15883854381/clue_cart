@@ -79,7 +79,7 @@ function encodeToken($openid, $expTime = 1440, $ip = '', $note = [])
     $payload = [
         'iss' => 'admin', // 签发人
         'Userip' => $ip, // 用户ip
-        'exp' => strtotime("+" . $expTime . " minute", $time), // 过期时间
+//        'exp' => strtotime("+" . $expTime . " minute", $time), // 过期时间
         'nbf' => $time, // 生效时间
         'iat' => $time, //签发时间
         'id' => $openid, // 用户id
@@ -118,6 +118,16 @@ function ordernum()
 {
     return date('Ymd') . substr(implode(NULL, array_map('ord', str_split(substr(uniqid(), 7, 13), 1))), 0, 8); //商户订单号
 }
+
+
+function pageData($post): array
+{
+    $pageSize = $post['pageSize'] ?? 10;
+    $pageNumber = $post['pageNumber'] ?? 1;
+    $pageCount = ($pageNumber - 1) * $pageSize;
+    return ['pageSize'=> $pageSize, 'pageCount' => $pageCount];
+}
+
 
 
 

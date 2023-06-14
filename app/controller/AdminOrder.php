@@ -24,30 +24,44 @@ class AdminOrder extends BaseController
     {
 
         $post = Request::instance()->post();
-        $pageSize = @$post['pageSize'] ?? 10;
-        $pageNumber = @$post['pageNumber'] ?? 1;
-        $pageCount = ($pageNumber - 1) * $pageSize;
+        $pageData = pageData($post);
+
+        $where = " 1";
+
+        if (!empty($post['order_number'])) {
+            $order_number = str_replace(PHP_EOL, '', $post['order_number']);
+            $where .= " AND (out_trade_no='${order_number}' or transaction_id = '${order_number}') ";
+        }
+        if (!empty($post['flat'])) {
+            $where .= " AND flat='${post['flat']}'";
+        }
+
         $sql = "SELECT 
                     a.id,a.clue_id,cart_type,out_trade_no,buy_num,price,refund_reason,creat_time,payment_time,a.flat,description,transaction_id,
                     nickname,phone_number,headimgurl
                     FROM  order_list  a
-                    LEFT JOIN `user` b ON a.openid = b.openid  ORDER BY creat_time DESC LIMIT $pageCount , {$pageSize}";
+                    LEFT JOIN `user` b ON a.openid = b.openid  WHERE $where ORDER BY creat_time DESC   LIMIT ${pageData['pageCount']} ,${pageData['pageSize']}";
+
+        $totalSql = "SELECT COUNT(id) as total FROM order_list WHERE  $where";
+
         $res = DB::query($sql);
+        $Totalres = DB::query($totalSql);
+
         if ($res) {
-            return success(200, '获取成功', $res);
+            return success(200, '获取成功', ['total' => $Totalres[0]['total'], 'data' => $res]);
         } else {
-            return error(304, '获取失败', $res);
+            return error(304, '没有数据', null);
         }
     }
 
 
     // 获取订单的数量
-    function OrderCount()
-    {
-        $order = new \app\model\Order();
-        $count = $order->count();
-        return success(200, '获取成功', ['count' => $count]);
-    }
+//    function OrderCount()
+//    {
+//        $order = new \app\model\Order();
+//        $count = $order->count();
+//        return success(200, '获取成功', ['count' => $count]);
+//    }
 
 
     // 修改订单状态

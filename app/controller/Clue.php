@@ -177,23 +177,30 @@ class Clue extends BaseController
         $BuyOrder = [];
         // 此处判断是否购买了 订单 开始
         if ($token) {
-            $BuyOrder = $order->where([['clue_id', '=', $post['clue_id']], ['openid', '=', $token->id]])->order('payment_time', 'DESC')->find();
+            $BuyOrder = $order->where([['clue_id', '=', $post['clue_id']], ['openid', '=', $token->id],['flat','in',[1, 3, 5, 6]]])->find();
         }
-        Log::info($BuyOrder);
 
-        if (isset($BuyOrder['flat'])) {
-
-            $ifData = [1, 3, 5, 6];
-
-            if (in_array($BuyOrder['flat'], $ifData)) {
-                $res = $clue->CluePhone($post['clue_id'], $post['type']);
-            } else {
-                $res = $clue->ClueNotPhone($post['clue_id'], $post['type']);
-            }
+        if($BuyOrder){
+            $res = $clue->CluePhone($post['clue_id'], $post['type']);
             $res[0]['flat'] = $BuyOrder['flat'];
-        } else {
+        }else{
             $res = $clue->ClueNotPhone($post['clue_id'], $post['type']);
         }
+
+
+//        if (isset($BuyOrder['flat'])) {
+//
+//            $ifData = [1, 3, 5, 6];
+//
+//            if (in_array($BuyOrder['flat'], $ifData)) {
+//                $res = $clue->CluePhone($post['clue_id'], $post['type']);
+//            } else {
+//                $res = $clue->ClueNotPhone($post['clue_id'], $post['type']);
+//            }
+//            $res[0]['flat'] = $BuyOrder['flat'];
+//        } else {
+//            $res = $clue->ClueNotPhone($post['clue_id'], $post['type']);
+//        }
 
         $clue_id = $post['clue_id'];
         $tags_sql = "SELECT tagName FROM tagsmap a LEFT JOIN tags b ON a.tags_id = b.id WHERE clue_id = '${clue_id}'";

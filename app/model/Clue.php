@@ -46,7 +46,7 @@ class Clue extends Model
                 (CASE Tosell WHEN 0 THEN unitPrice_1  WHEN 1 THEN unitPrice_2 ELSE unitPrice_3 END) as Price
                 FROM ${dataB} a 
                 LEFT JOIN t_province b ON a.provinceID = b.id  	
-                LEFT JOIN t_city c ON a.provinceID = c.id  
+                LEFT JOIN t_city c ON a.cityID = c.id  
                 Left JOIN t_car_brand d ON a.CartBrandID = d.id
                 LEFT JOIN (SELECT g.openid, COUNT(CASE WHEN g.flag = 1 THEN 1 END) as total,COUNT(g.openid) as allTotal  FROM clue g GROUP BY openid) h ON h.openid = a.openid
                 LEFT JOIN `user` e ON a.openid =  	e.openid WHERE a.clue_id ='${id}'";

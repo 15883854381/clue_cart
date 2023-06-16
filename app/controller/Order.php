@@ -225,9 +225,33 @@ class Order extends BaseController
         if ($res) {
             return success(200, '查询成功', $res);
         } else {
-            return success(304, '还没有您的订单信息', $res);
+            return error(304, '还没有您的订单信息', $res);
         }
     }
+
+
+    // 根据订单号查询 线索的手机号码
+    function getPhone_number()
+    {
+        $post = Request::post();
+        if (empty($post['out_trade_no'])) {
+            return error(304, '参数错误', null);
+        }
+
+        $sql = "SELECT  b.phone_number FROM order_list	a 
+                LEFT JOIN  ( SELECT clue_id,phone_number FROM clue UNION SELECT clue_id, phone_number FROM clue_old ) b ON a.clue_id = b.clue_id 
+                WHERE flat in (1,3,5,6) AND out_trade_no='${post['out_trade_no']}'";
+        $res = Db::query($sql);
+        if ($res) {
+            return success(200, '查询成功', $res);
+        } else {
+            return success(304, '查询失败', null);
+        }
+
+    }
+
+
+
 
 
     // ==========================================  订单验证 开始  ======================================================

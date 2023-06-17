@@ -31,13 +31,24 @@ class AdminRole extends BaseController
         }
 
 
-        $nuw_arr =[];
+        $nuw_arr = [];
         foreach ($res as $item) {
             $item['role_authority'] = explode('|', $item['role_authority']);
             $nuw_arr[] = $item;
         }
 
         return success(200, '获取成功', $nuw_arr);
+    }
+
+
+    // 查询用户是属于哪个角色
+    function RoleState()
+    {
+        $token = decodeToken();
+        if (!$token) {
+            return error(304, '没有访问权限', null);
+        }
+        return success(200, '获取成功', ["authority" => $token->note->authority]);
     }
 
 

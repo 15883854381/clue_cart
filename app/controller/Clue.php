@@ -407,6 +407,9 @@ class Clue extends BaseController
                 LEFT JOIN `user` b  ON a.openid = b.openid
                 WHERE  `flat` not in (7,8,9)  AND `clue_id` = '${post['clue_id']}'";
         $res = Db::query($sql);
+        if(!$res){
+            return error(304, '没有数据', null);
+        }
         return success(200, '获取成功', $res);
 
     }

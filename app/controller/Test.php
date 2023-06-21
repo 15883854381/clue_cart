@@ -22,14 +22,10 @@ class Test
     public function index()
     {
 
-        $request = Request::instance();
+        $str = "<div class=\"layui-btn-group tool-i\">1<a onclick=\"tool_record('https%3A%2F%2Fs28001701.qh.zcallr.cn%2Fmonitor%2F2023%2F06%2F20%2Fq-6001-unknown-20230620-145244-1687243933.19632.wav')\" class=\"layui-btn layui-btn-primary layui-btn-xs fa fa-play-circle\"  title=\"播放录音\"></a></div>";
 
-        $token = $request->header('token');
-
-//        JWT::$leeway=6000;
-        $decoded = JWT::decode($token, new Key(md5('admin'), 'HS256'));
-        dump($decoded);
-//         JWT::decode($token, new Key(md5('admin'), 'HS256'));
+        $findnum = stripos($str, 'wav');
+        echo urldecode(substr($str, 62, -103 ));
 
     }
 

@@ -44,6 +44,7 @@ class CheckToken
             '/AdminClue/timingEdit',
             '/WeiXinUlits/sendTemplate',
             '/WeiXinUlits/pushInfo',
+            '/Clue/shareClue',
             '/Test/index'
 
         ];

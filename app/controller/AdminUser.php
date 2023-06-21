@@ -340,5 +340,13 @@ class AdminUser extends BaseController
         return ['code' => 200, 'mes' => '成功'];
     }
 
+    // 获取所有 状态 为 1 的用户
+    function getFlagSuccess()
+    {
+        $user = new \app\model\User();
+        $res = $user->where('flas', 1)->field('openid,nickname')->select();
+        return success(200, '', $res);
+    }
+
 
 }

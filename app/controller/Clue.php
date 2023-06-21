@@ -389,7 +389,6 @@ class Clue extends BaseController
 
         $data = new Ulits($this->app);
         $res = $data->signJsapi();
-        Log::info("数据=============");
         Log::info($res);
         if ($res) {
             return success(200, '获取成功', $res);

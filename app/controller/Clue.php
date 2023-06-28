@@ -128,8 +128,6 @@ class Clue extends BaseController
 
         $clue = new \app\model\Clue();
         $count = $clue->where($countWhere)->count();
-        Log::info($count);
-
 
         $clue_id = implode(array_column($version, 'clue_id'), "','");
         $oldCart = new \app\model\OldCart();
@@ -177,13 +175,13 @@ class Clue extends BaseController
         $BuyOrder = [];
         // 此处判断是否购买了 订单 开始
         if ($token) {
-            $BuyOrder = $order->where([['clue_id', '=', $post['clue_id']], ['openid', '=', $token->id],['flat','in',[1, 3, 5, 6]]])->find();
+            $BuyOrder = $order->where([['clue_id', '=', $post['clue_id']], ['openid', '=', $token->id], ['flat', 'in', [1, 3, 5, 6]]])->find();
         }
 
-        if($BuyOrder){
+        if ($BuyOrder) {
             $res = $clue->CluePhone($post['clue_id'], $post['type']);
             $res[0]['flat'] = $BuyOrder['flat'];
-        }else{
+        } else {
             $res = $clue->ClueNotPhone($post['clue_id'], $post['type']);
         }
 
@@ -406,7 +404,7 @@ class Clue extends BaseController
                 LEFT JOIN `user` b  ON a.openid = b.openid
                 WHERE  `flat` not in (7,8,9)  AND `clue_id` = '${post['clue_id']}'";
         $res = Db::query($sql);
-        if(!$res){
+        if (!$res) {
             return error(304, '没有数据', null);
         }
         return success(200, '获取成功', $res);
@@ -476,6 +474,37 @@ class Clue extends BaseController
             return error(304, '你还没有上传线索', null);
         }
         return success(200, '获取成功', ['data' => $res, 'total' => $total]);
+    }
+
+
+    // 线索推荐
+    public function ClueRecommended()
+    {
+
+        $post = Request::post();
+
+        $sql = "SELECT a.clue_id,sales,a.CartBrandID,a.cityID,a.cart_type,Tosell,CONCAT(user_name,IF(sex = 1 ,'先生','女士')) as user_name , IF(sex = 1 ,'男','女') as sex ,
+                                CONCAT_WS('*********',substring(a.phone_number, 1, 3),
+                                substring(a.phone_number, 12, 4)) as Cluephone_number,b.name as cartName,
+                                CONCAT(c.`name`,'.',e.`name`) AS provinceCity,
+                                ROUND(100 / sales * Tosell) as progress,
+                                (UNIX_TIMESTAMP(createtime)*1000) as createtime,
+                                (CASE Tosell WHEN 0 THEN unitPrice_1  WHEN 1 THEN unitPrice_2 ELSE unitPrice_3 END) as Price,
+                                IFNULL(notes_name,nickname) as nclueName ,h.total as upClueNum,h.allTotal,CEIL(((h.total/h.allTotal)*100)) as percentage 
+								FROM (SELECT * FROM clue WHERE clue_id != '${post['clue_id']}'  ORDER BY cityID = ${post['cityID']} DESC , provinceID = ${post['provinceID']} DESC LIMIT 10) a 
+                                LEFT JOIN t_car_brand b ON a.CartBrandID = b.id
+                                LEFT JOIN t_province c ON  a.provinceID = c.id
+                                LEFT JOIN t_city e ON  a.cityID = e.id
+								LEFT JOIN (SELECT g.openid, COUNT(CASE WHEN g.flag = 1 THEN 1 END) as total,COUNT(g.openid) as allTotal  FROM clue g GROUP BY openid) h ON h.openid = a.openid
+                                left JOIN user f ON a.openid = f.openid";
+
+        $res = Db::query($sql);
+
+        if (!$res) {
+            return error(304, '没有数据', null);
+        }
+        return success(200, '获取成功', $res);
+
     }
 
 

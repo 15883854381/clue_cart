@@ -236,7 +236,6 @@ class User extends BaseController
         $weixin = \think\facade\Config::get('WeixinConfig.Weixin');
         $res = file_get_contents('https://api.weixin.qq.com/sns/oauth2/access_token?appid=' . $weixin['appid'] . '&secret=' . $weixin['appsecret'] . '&code=' . $code . '&grant_type=authorization_code');
         $data = json_decode($res);
-        Log::info($res);
         // 验证授权是否成功
         if (isset($data->errcode)) {
             return false;
@@ -286,6 +285,30 @@ class User extends BaseController
 
         return success(200, '获取成功', ['orderCount' => $orderCount, 'clueCount' => $clueCount + $OldClueCount, 'shareCount' => $shareCount]);
 
+    }
+
+    // 判断用户是否关注了关注号
+    public function WechatAttentionVerification()
+    {
+        $post = Request::post();
+        // 获取 AccessToken == 开始
+        $accessTokenVerify = self::getAccessToken($post['code']);
+        if (!$accessTokenVerify) {
+            return error(304, '授权错误', null);
+        }
+
+        $openid = $accessTokenVerify->openid;
+
+        $ulits = new Ulits($this->app);
+        $tokens = $ulits->GetAccess_token();
+        // 从微信中获取用户的基本信息
+        $url = "https://api.weixin.qq.com/cgi-bin/user/info?access_token=$tokens&openid=$openid&lang=zh_CN";
+        $res = file_get_contents($url);
+        $res = json_decode($res);
+        if ($res->subscribe == 0) {
+            return error(304, '你还没有关注此公众号', null);
+        }
+        return error(200, '', null);
     }
 
 

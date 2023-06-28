@@ -30,7 +30,7 @@ class AdminUser extends BaseController
         $pageNumber = $post['pageNumber'] ?? 1;
         $pageSize = $post['pageSize'] ?? 10;
         $count = $user->count();
-        $data = $user->field('nickname,headimgurl,openid AS id,phone_number,balance,upClueNum,type,notes_name,companyName,flas')->page($pageNumber, $pageSize)->select();
+        $data = $user->field('nickname,enroll_time,headimgurl,openid AS id,phone_number,balance,upClueNum,type,notes_name,companyName,flas')->page($pageNumber, $pageSize)->select();
 
         return success(200, "获取成功", ['count' => $count, 'data' => $data]); // 未过期 且 手机号已存在
     }

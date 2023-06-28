@@ -45,6 +45,8 @@ class CheckToken
             '/WeiXinUlits/sendTemplate',
             '/WeiXinUlits/pushInfo',
             '/Clue/shareClue',
+            '/Clue/ClueRecommended',
+            '/User/WechatAttentionVerification',// 验证是否关注关注号
             '/Test/index'
 
         ];

@@ -21,7 +21,6 @@ class UlitsThree
     {
         $access_token = self::GetAccess_token_notConter();
         $url = "https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=" . $access_token;
-
         $weixin = Config::get('WeixinConfig.Weixin');
         // 汽车共享联盟
         $updata = [
@@ -36,23 +35,8 @@ class UlitsThree
                 "time4" => ["value" => $date],
             ]
         ];
-        // 汽车共享助手
-//        $sex = $data['sex'] == 1 ? '先生' : '女士';
-//        $updata = [
-//            'touser' => $item['openid'],
-//            'template_id' => $weixin['template_id'],
-//            'appid' => $weixin['appid'],
-//            "url" => $weixin['Cline_url'],
-//            "data" => [
-//                "first" => '最新线索通知',
-//                "name" => ["value" =>$data['user_name'] . $sex],
-//                "sex" => ["value" => $data['sex'] == 1 ? '男' : '女'],
-//                "tel" => ["value" => substr_replace($data['phone_number'], '*', 3, 4)],
-//                "remark" => ["value" => $data['user_name'] . "先生最近有购车意向，请留意此线索。发布于：" . $date],
-//            ]
-//        ];
-        $code_res = http::post($url, [], json_encode($updata));
 
+        $code_res = http::post($url, [], json_encode($updata));
         return $code_res->body;
     }
 

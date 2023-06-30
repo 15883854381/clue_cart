@@ -30,7 +30,7 @@ class AdminUser extends BaseController
         $pageNumber = $post['pageNumber'] ?? 1;
         $pageSize = $post['pageSize'] ?? 10;
         $count = $user->count();
-        $data = $user->field('nickname,enroll_time,headimgurl,openid AS id,phone_number,balance,upClueNum,type,notes_name,companyName,flas')->page($pageNumber, $pageSize)->select();
+        $data = $user->field('nickname,enroll_time,headimgurl,openid AS id,phone_number,balance,upClueNum,type,notes_name,companyName,flas')->order('enroll_time','DESC')->page($pageNumber, $pageSize)->select();
 
         return success(200, "获取成功", ['count' => $count, 'data' => $data]); // 未过期 且 手机号已存在
     }
@@ -43,36 +43,62 @@ class AdminUser extends BaseController
     function EditUserFlas()
     {
         $request = Request::instance();
-        if ($request->isPost()) {
-            $user = new UserModel();
-            $post = $request->post();
-            $userProcessRes = self::verifyUserProcess($post['id']);
-            if (!$userProcessRes) return error('304', '该用户还未上传审核信息', null);
+        if (!$request->isPost()) {
+            return error(304, '请求出错', null);
+        }
+        $user = new UserModel();
+        $post = $request->post();
+
+        $updata = [
+            'flas' => $post['flas'],
+            'type' => $post['type'],
+        ];
+        if (!empty($post['notesName'])) {
+            $updata['notes_name'] = $post['notesName'];
+        }
 
 
-            $updata = [
-                'flas' => $post['flas'],
-            ];
-            if ($post['flas'] == '1') {
-                $updata['type'] = $post['type'];
+        $upProcess = [
+            'username' => $post['username'],
+        ];
+        $ifarr = [2, 3, 0];
+        if (in_array($post['flas'], $ifarr)) {
+            $upProcess['flag'] = 2;
+        } else {
+            $upProcess['flag'] = 1;
+        }
+
+        // 等于公司的情况
+        if ($post['type'] == 2) {
+            // 判断是否上传文件
+            $fileimg = Request()->file('ImgFile');
+            if ($fileimg) {
+                $imgurl[] = Filesystem::disk('public')->putFile('process', $fileimg);
+                $updata['img'] = serialize($imgurl);
             }
-
-            if (isset($post['notesName'])) {
-                $updata['notes_name'] = $post['notesName'];
-            }
-
-            $userProcess = new UserProcess();
-            $userProcess->where('openid', $post['id'])->save(['flag' => $post['flas']]);
-
-            $updata['authority'] = $post['type'] == 2 ? 6 : 8; // 此处修改用户角色 目前只有 2个角色
-
-            $res = $user->where('openid', $post['id'])->update($updata);
-            if ($res) {
-                return success(200, '修改成功', null);
-            } else {
-                return error('304', '修改失败', null);
+            // 上传公司名称
+            if (!empty($post['companyName'])) {
+                $updata['companyName'] = $post['companyName'];
+                $upProcess['companyName'] = $post['companyName'];
             }
         }
+
+        $userProcess = new UserProcess();
+        $res = $userProcess->where('openid', $post['openid'])->save($upProcess);
+
+        if ($res === false) {
+            return error(304, '修改失败2', null);
+        }
+
+        $updata['authority'] = $post['type'] == 2 ? 6 : 8; // 此处修改用户角色 目前只有 2个角色
+
+        $res = $user->where('openid', $post['openid'])->update($updata);
+        if ($res === false) {
+            return error(304, '修改失败', null);
+        } else {
+            return success(200, '修改成功', null);
+        }
+
     }
 
 //    获取用户是否上传用户信息

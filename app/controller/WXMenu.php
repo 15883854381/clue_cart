@@ -61,7 +61,12 @@ class WXMenu extends BaseController
                     return self::Image($postArr->FromUserName, $postArr->ToUserName, $data['media_id']);
             }
         } elseif ($postArr->Event == 'subscribe') {
-            return self::SendText($postArr->FromUserName, $postArr->ToUserName, '欢迎关注汽车共享联盟');
+            $a = [
+                "emoji" => "🤨",
+                "name" => "皱眉"
+            ];
+
+            return self::SendText($postArr->FromUserName, $postArr->ToUserName, '欢迎关注汽车助手联盟' . PHP_EOL . '点击下方查看更多线索' . PHP_EOL . "👇 👇 👇 ");
         }
     }
 

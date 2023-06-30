@@ -5,50 +5,44 @@ namespace app\controller;
 use app\BaseController;
 use think\facade\Db;
 use think\facade\Log;
+
 use WpOrg\Requests\Requests as http;
 
-class WeiXinUlits
+class WeiXinUlits extends BaseController
 {
     // 定时发送批量发送模板消息
     public function sendTemplate()
     {
-        $date = date('Y年m月d');
-        $sql = "SELECT  IFNULL(companyName,nickname) as nickname , openid FROM `user`"; // 用户信息
-        // 品牌和
-        $brand = Db::query('SELECT name as brandName, CartBrandID  FROM clue a  LEFT JOIN t_car_brand b ON a.CartBrandID = b.id WHERE name is not null  GROUP BY name,CartBrandID ORDER BY RAND() LIMIT 1');
-        $userdata = Db::query($sql);
-        if (!$brand) {
-            return error(304, '没有数据', null);
-        }
-        $clue = new \app\model\Clue();
-        $count = $clue->where('CartBrandID', $brand[0]['CartBrandID'])->count();
-        $ulitsThree = new UlitsThree();
-
         $open_data = self::UserOpenid();
         if (!$open_data) {
             return error(304, '数据请求失败', null);
         }
+        foreach ($open_data['data']['openid'] as $item) {
+            $this->UserCity($item);
+        }
+    }
 
-        if ($open_data['total'] !== count($userdata)) {
-            $updata = [];
-            foreach ($open_data['data']['openid'] as $item) {
-                foreach ($userdata as $it) {
-                    if ($item == $it['openid']) {
-                        $updata[] = $it;
-                        continue 2;
-                    }
-                }
-                $updata[] = ["nickname" => "先生/女士", "openid" => $item];
-            }
+    // openid
+    function UserCity($openid)
+    {
+        $ulit = new Templatelibrary($this->app);
+        $sql = "SELECT city_id,province_id,area FROM `user` WHERE openid = '${openid}' ";
+        $user = Db::query($sql);
+        $wheres = " WHERE  name is not null  ";
+        if (!empty($user[0]['province_id'])) {
+            $province_id = (string)$user[0]['province_id'];
+            $wheres .= "  AND provinceID = ${province_id}  ";
+        }
+        $sql = "SELECT CONCAT_WS('****',substring(phone_number, 1, 3),substring(phone_number, 8, 4)) as phone_number,user_name,sex,name as car,openid FROM clue  LEFT JOIN t_car_brand ON clue.CartBrandID = t_car_brand.id $wheres  ORDER BY RAND() LIMIT 1 ";
+        $res = Db::query($sql);
+        $res[0]['openid'] = $openid;
+        if(mt_rand(1, 10)>5){
+            $ulit->template_one($res[0]);
+        }else{
+            $ulit->template_two($res[0]);
         }
 
-        foreach ($updata as $item) {
-            try {
-                $ulitsThree->sendWeiXinTempleat_notConter($item, $count, $date, $brand[0]['brandName']);
-            } catch (\Exception $e) {
-                continue;
-            }
-        }
+
     }
 
 

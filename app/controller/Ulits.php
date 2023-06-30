@@ -206,10 +206,10 @@ class Ulits extends BaseController
         switch ($res['flas']) {
             case '0':
 //                return error(306, '请上传审核资料', null);
-                return ['code' => 306, 'mes' => '请上传资料审核 【也可联系客服进行审核】', 'data' => null];
+                return ['code' => 306, 'mes' => '你还未上传资料，请联系客服上传', 'data' => null];
             case '2':
 //                return error(307, '你的资料审核不通过，请重新上传资料', null);
-                return ['code' => 307, 'mes' => '你的资料审核不通过，请重新审核资料上传', 'data' => null];
+                return ['code' => 307, 'mes' => '你的资料审核不通过，请联系客服', 'data' => null];
             case '3':
 //                return error(308, '资料审核中，请通过审核通过后再上传', null);
                 return ['code' => 308, 'mes' => '资料审核中...', 'data' => null];
@@ -390,6 +390,7 @@ class Ulits extends BaseController
     // 模糊查询城市省市
     public function FuzzyQueriesCity($City)
     {
+        if (!$City) return [];
         $sql = "SELECT CONCAT(a.name,b.name) as city,b.province_id,b.id  FROM t_province a  LEFT JOIN t_city b ON a.id = b.province_id HAVING city LIKE '%$City%'";
         return Db::query($sql);
     }

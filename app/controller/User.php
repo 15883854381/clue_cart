@@ -54,10 +54,9 @@ class User extends BaseController
 
         //验证号码归属地
         $cityData = self::PhonenumberCity($post['phone_number']); // 号码归属地
-
-
-        // 此处做验证 验证是否上传了 userid  如果存在userid 就需要判断 这个 userid 是否存在数据库
-
+        // 匹配城市ID
+        $Ulist = new Ulits($this->app);
+        $City = $Ulist->FuzzyQueriesCity($cityData['city']);
 
         // 上传数据库开始
         $insertData = [
@@ -67,9 +66,10 @@ class User extends BaseController
             "phone_number" => $post['phone_number'],
             'access_token' => $access_token,
             'period_access_token' => date('Y-m-d H:i:s', $time),
-            'area' => $cityData['province']
+            'area' => $cityData['province'],
+            'province_id' => @$City['0']['province_id'] ?? NUll,
+            'city_id' => @$City['0']['id'] ?? NULL
         ];
-        Log::info($insertData);
 
         $token = encodeToken($openid, 60, $request->host); // 授权成功 用户生成token
 

@@ -5,6 +5,7 @@ namespace app\controller;
 
 use app\BaseController;
 use app\model\UserProcess;
+use think\facade\Db;
 use think\facade\Filesystem;
 use think\facade\Log;
 use think\facade\Request;
@@ -80,13 +81,14 @@ class AdminUserProcess extends BaseController
         if (!isset($post['id'])) {
             return error(304, '参数错误', null);
         }
-        $UserProcess = new UserProcess();
-        $res = $UserProcess->where('openid', $post['id'])->filter(function ($val) {
-            return $val['img'] = unserialize($val['img']);
-        })->find();
+        $sql = "SELECT a.companyName,a.id,b.flas,img,a.openid,a.phone_number,a.type,a.username,img,notes_name as notesName  FROM user_process a LEFT JOIN user b ON a.openid = b.openid WHERE  a.openid = '${post['id']}'";
+        $res = Db::query($sql);
         if (!$res) {
             return error(304, '没有数据', null);
         }
+        $res = $res[0];
+        $res['img'] = unserialize($res['img']);
+
         if (!empty($res['img'])) {
             $img = [];
             foreach ($res['img'] as $key => $item) {

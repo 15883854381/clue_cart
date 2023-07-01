@@ -30,7 +30,7 @@ class AdminUser extends BaseController
         $pageNumber = $post['pageNumber'] ?? 1;
         $pageSize = $post['pageSize'] ?? 10;
         $count = $user->count();
-        $data = $user->field('nickname,enroll_time,headimgurl,openid AS id,phone_number,balance,upClueNum,type,notes_name,companyName,flas')->order('enroll_time','DESC')->page($pageNumber, $pageSize)->select();
+        $data = $user->field('nickname,enroll_time,headimgurl,openid AS id,phone_number,balance,upClueNum,type,notes_name,companyName,flas')->order('enroll_time', 'DESC')->page($pageNumber, $pageSize)->select();
 
         return success(200, "获取成功", ['count' => $count, 'data' => $data]); // 未过期 且 手机号已存在
     }
@@ -46,27 +46,23 @@ class AdminUser extends BaseController
         if (!$request->isPost()) {
             return error(304, '请求出错', null);
         }
+
         $user = new UserModel();
         $post = $request->post();
-
+        // 修改用户表的数据
         $updata = [
             'flas' => $post['flas'],
             'type' => $post['type'],
-        ];
-        if (!empty($post['notesName'])) {
-            $updata['notes_name'] = $post['notesName'];
-        }
+            'notes_name' => $post['notesName'] ?? '',
+            'companyName' => $post['companyName'] ?? '',
 
-
-        $upProcess = [
-            'username' => $post['username'],
         ];
-        $ifarr = [2, 3, 0];
-        if (in_array($post['flas'], $ifarr)) {
-            $upProcess['flag'] = 2;
-        } else {
-            $upProcess['flag'] = 1;
-        }
+        // 公司表的数据
+        $upProcess = ['username' => $post['username'], 'type' => $post['type'], 'companyName' => $post['companyName'] ?? ''];
+
+        // 状态是否未审核通过的状态
+        $ifArr = [2, 3, 0];// 筛选状态
+        $upProcess['flag'] = in_array($post['flas'], $ifArr) ? 2 : 1;
 
         // 等于公司的情况
         if ($post['type'] == 2) {
@@ -74,31 +70,33 @@ class AdminUser extends BaseController
             $fileimg = Request()->file('ImgFile');
             if ($fileimg) {
                 $imgurl[] = Filesystem::disk('public')->putFile('process', $fileimg);
-                $updata['img'] = serialize($imgurl);
-            }
-            // 上传公司名称
-            if (!empty($post['companyName'])) {
-                $updata['companyName'] = $post['companyName'];
-                $upProcess['companyName'] = $post['companyName'];
+                $upProcess['img'] = serialize($imgurl);
             }
         }
-
+        // 判断数据是否存在 存在则修改  否则为添加
         $userProcess = new UserProcess();
-        $res = $userProcess->where('openid', $post['openid'])->save($upProcess);
+        $SeaRes = $userProcess->where('openid', $post['openid'])->find(); // 判断是否存在于数据库
+        if ($SeaRes) {
+            $res = $userProcess->where('openid', $post['openid'])->save($upProcess);
+        } else {
+            $userProcess['openid'] = $post['openid'];
+            $res = $userProcess->save($upProcess);
+        }
 
         if ($res === false) {
-            return error(304, '修改失败2', null);
+            if (!empty($upProcess['img'])) unlink(root_path() . 'public/storage/' . $upProcess['img']);
+            return error(304, '修改失败', null);
         }
 
         $updata['authority'] = $post['type'] == 2 ? 6 : 8; // 此处修改用户角色 目前只有 2个角色
 
         $res = $user->where('openid', $post['openid'])->update($updata);
-        if ($res === false) {
+        if (!$res) {
+            if (!empty($upProcess['img'])) unlink(root_path() . 'public/storage/' . $upProcess['img']);
             return error(304, '修改失败', null);
         } else {
             return success(200, '修改成功', null);
         }
-
     }
 
 //    获取用户是否上传用户信息

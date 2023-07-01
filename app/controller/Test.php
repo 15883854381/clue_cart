@@ -9,6 +9,7 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use think\console\command\make\Model;
 use think\facade\Db;
+use think\facade\Env;
 use think\facade\Log;
 use think\facade\Queue;
 use think\facade\Request;
@@ -21,9 +22,9 @@ class Test
 {
     public function index()
     {
+       echo unlink(root_path() . 'public/storage/' . 'process/20230701\\27656a735671c893a3d8635824ca2961.png');
 
-        echo date("Y-m-d", strtotime("-7 day"));
-        echo date("Y-m-d");
+        echo root_path() . 'public/storage/' . 'process/20230701\\27656a735671c893a3d8635824ca2961.png';
 
     }
 

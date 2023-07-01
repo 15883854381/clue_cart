@@ -88,15 +88,9 @@ class AdminUserProcess extends BaseController
         }
         $res = $res[0];
         $res['img'] = unserialize($res['img']);
-
         if (!empty($res['img'])) {
-            $img = [];
-            foreach ($res['img'] as $key => $item) {
-                $img[] = $request . '/' . 'storage' . '/' . $item;
-            }
-            $res['img'] = $img;
+            $res['img'] = $request . '/' . 'storage' . '/' . $res['img'][0];
         }
-
         return error(200, '获取成功', $res);
     }
 }

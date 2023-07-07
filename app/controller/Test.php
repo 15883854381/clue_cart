@@ -22,9 +22,13 @@ class Test
 {
     public function index()
     {
-       echo unlink(root_path() . 'public/storage/' . 'process/20230701\\27656a735671c893a3d8635824ca2961.png');
+        $res = Db::table('order_temporary')->where('state',1)->select()->toArray();
+        if ($res) {
+            return 1;
+        } else {
+            return 2;
+        }
 
-        echo root_path() . 'public/storage/' . 'process/20230701\\27656a735671c893a3d8635824ca2961.png';
 
     }
 

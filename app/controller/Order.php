@@ -7,6 +7,7 @@ use app\controller\Payment;
 use app\job\time24QueryOrder;
 use app\model\Clue as ClueModel;
 use think\db\exception\DbException;
+use think\facade\Config;
 use think\facade\Db;
 use think\facade\Log;
 use think\facade\Queue;
@@ -53,17 +54,18 @@ class Order extends BaseController
             return error(304, "金额不正确", null);
         }
 
-
+        $Weixin = Config::get('WeixinConfig.Weixin');
         // 生成微信订单 并保存 用于后期根据 订单号查询数据 并支付 ============= 开始
         $shop = [
             'description' => '汽车线索互助联盟',
             'out_trade_no' => $out_trade_no,
             'amount' => ['total' => $price * 100], //订单总金额，单位为分
-            'payer' => ['openid' => $id]  //用户标识,用户在直连商户appid下的唯一标识
+            'payer' => ['openid' => $id],  //用户标识,用户在直连商户appid下的唯一标识
+            'attach' => 'ceshi_' . time(),
         ];
-        Log::error($shop);
+        $notify_url = $Weixin['notify_url'] . 'notify/' . $out_trade_no;
         $payment = new Payment();
-        $prepay_id = $payment->getPrepayId($shop);
+        $prepay_id = $payment->getPrepayId($shop, $notify_url);
         if (!$prepay_id) {
             return error(304, "订单创建失败1", null);
         }
@@ -120,7 +122,7 @@ class Order extends BaseController
                 'ExpirationTime' => $ExpirationTime,
                 'transaction_id' => $row['transaction_id'],
             ]);
-            Queue::later($Order['Success'], time24QueryOrder::class, ['transaction_id' => $row['transaction_id']]);
+//            Queue::later($Order['Success'], time24QueryOrder::class, ['transaction_id' => $row['transaction_id']]);
             if (!$res) {
                 trace('交易是失败====' . $payment_time . '=====' . $res, 'error');
             }
@@ -299,8 +301,7 @@ class Order extends BaseController
     }
 
     // 创建订单
-    private
-    function createOrder($datas, $type)
+    private function createOrder($datas, $type)
     {
 
         Db::startTrans();

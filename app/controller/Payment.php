@@ -38,16 +38,19 @@ class Payment
 
     }
 
-
-    public function getPrepayId($datas)
+    /**
+     * @param $datas array 生成订单所需参数
+     * @param $notify_url string 支付成功反馈 url
+     * @return false|mixed
+     */
+    public function getPrepayId($datas,$notify_url)
     {
 
 
         $data = [
             'appid' => $this->appid, //公众号的服务号APPID
             'mchid' => $this->mchid, //商户号
-            'attach' => 'ceshi_' . time(), //附加数据,在查询API和支付通知中原样返回
-            'notify_url' => $this->notify_url . 'notify/' . $datas['out_trade_no'], //异步接收微信支付结果通知的回调地址
+            'notify_url' => $notify_url, //异步接收微信支付结果通知的回调地址
         ];
         $data = array_merge($data, $datas);
 

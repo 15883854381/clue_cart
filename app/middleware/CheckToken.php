@@ -28,6 +28,7 @@ class CheckToken
             '/Payment/notify',
             '/notify',
             '/Order/notify',// 付款成功回调
+            '/Clue/notifyBatch',// 批量购买付款成功回调
             '/AdminOrder/verify_refund',// 退款回调
             '/Phone/NotifyUrl', // 录音回调
             '/Admincustomer/Usercustomer',// 客服分配

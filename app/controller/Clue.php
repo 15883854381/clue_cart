@@ -3,6 +3,7 @@
 namespace app\controller;
 
 use app\BaseController;
+use EasyTask\Queue;
 use Ramsey\Uuid\Uuid;
 use think\db\Where;
 use think\facade\Config;
@@ -505,6 +506,247 @@ class Clue extends BaseController
         }
         return success(200, '获取成功', $res);
 
+    }
+
+
+    // 批量购买 --- 查询线索
+    public function Bulkbuying()
+    {
+
+        $where = $this->BulkbuyingWhere();
+        $post = Request::post();
+
+        $page = pageData($post);
+
+        $sql = "SELECT 
+                    clue_id,user_name,sex,PhoneBelongingplace,cart_type,sales,Tosell,
+                    (CASE Tosell WHEN 0 THEN unitPrice_1  WHEN 1 THEN unitPrice_2 ELSE unitPrice_3 END) as unitPrice_1,
+                    b.city,b.province,record_file_url,d.`name` as brand,
+                    CONCAT_WS('****',substring(a.phone_number, 1, 3),substring(a.phone_number, 8, 4)) as phone_number
+                FROM (SELECT * FROM clue UNION SELECT * FROM clue_old) a
+                    LEFT JOIN (SELECT a.name as province,b.`name` as city,b.id,b.province_id FROM t_province a LEFT JOIN  t_city b  ON a.id = b.province_id) b ON b.id =  a.cityID
+                    LEFT JOIN t_car_brand d ON d.id = a.CartBrandID
+                    LEFT JOIN notifyurl c ON c.out_trade_no = clue_id WHERE $where  ORDER BY  a.id DESC  LIMIT ${page['pageCount']},${page['pageSize']} ";
+        $res = Db::query($sql);
+
+        $sqlCount = "SELECT COUNT(clue_id) as total from (SELECT * FROM clue UNION SELECT * FROM clue_old) a WHERE  $where";
+        $total = Db::query($sqlCount);
+
+
+        if ($res) {
+            return success(200, '获取成功', ['data' => $res, 'total' => $total[0]['total']]);
+        } else {
+            return error(304, '没有筛选的数据', null);
+        }
+    }
+
+    // 计算筛选价格的数据
+    public function price_compute()
+    {
+        $post = Request::post();
+        $where = $this->BulkbuyingWhere();
+        $sql = "SELECT clue_id,(unitPrice_1+ unitPrice_2 + unitPrice_3) as totalPrice,cart_type,sales,Tosell,
+                (CASE Tosell WHEN 0 THEN unitPrice_1  WHEN 1 THEN unitPrice_2 ELSE unitPrice_3 END) as unitPrice_1
+                from (SELECT * FROM clue UNION SELECT * FROM clue_old) a  WHERE $where";
+        $res = Db::query($sql);
+        $total = 0;
+        foreach ($res as $item) {
+            $total += $item['unitPrice_1'];
+        }
+        return success(200, '获取成功', $total * 100);
+    }
+
+
+    // 创建临时订单
+    private function CreateTemporaryOrder()
+    {
+        $out_trade_no = ordernum();//订单号
+        $token = decodeToken();// 获取用户 token
+        $where = $this->BulkbuyingWhere();
+        $sql = "SELECT clue_id,(unitPrice_1+ unitPrice_2 + unitPrice_3) as totalPrice,a.openid,cart_type,sales,Tosell,
+                (CASE Tosell WHEN 0 THEN unitPrice_1  WHEN 1 THEN unitPrice_2 ELSE unitPrice_3 END) as price
+                from (SELECT * FROM clue UNION SELECT * FROM clue_old) a  WHERE $where";
+        $res = Db::query($sql);
+
+        $TemporaryOrderData = [];
+        $total = 0;
+        foreach ($res as $item) {
+            $TemporaryOrderData[] = [
+                'out_trade_no' => $out_trade_no,
+                'clue_id' => $item['clue_id'],
+                'openid' => $token->id,
+                'buy_num' => 1,
+                'price' => $item['price'],
+                'up_openid' => $item['openid'],
+                'ExpirationTime' => date("Y-m-d H:i:s", strtotime("now  +  5 hour ")),
+                'cart_type' => $item['cart_type'],
+            ];
+            $total += $item['price'];
+        }
+        return [
+            'priceTotal' => $total,// 价格总量
+            'TemporaryOrderData' => $TemporaryOrderData,// 存放在临时库的数据
+            'out_trade_no' => $out_trade_no,// 订单号
+            'openid' => $token->id,// 购买者的id
+        ];
+    }
+
+//    提交订单
+    public function SubmitOrder($data,$attach='123')
+    {
+        $Weixin = Config::get('WeixinConfig.Weixin');
+//        $data = $this->CreateTemporaryOrder();
+        // 生成微信订单 并保存 用于后期根据 订单号查询数据 并支付 ============= 开始
+        $shop = [
+            'description' => '汽车线索互助联盟',
+            'out_trade_no' => $data['out_trade_no'],
+            'amount' => ['total' => $data['priceTotal'] * 100], //订单总金额，单位为分
+            'payer' => ['openid' => $data['openid']],  //用户标识,用户在直连商户appid下的唯一标识
+            'attach' => $attach, //附加数据,在查询API和支付通知中原样返回
+        ];
+        // 获取用户创建订单的  PrepayId
+        $notify_url = $Weixin['notify_url'] . 'notifyBatch/' . $data['out_trade_no']; // 支付成功反馈 后端
+        $payment = new Payment();
+        $prepay_id = $payment->getPrepayId($shop, $notify_url);
+        if (!$prepay_id) {
+            return error(304, '获取失败', null);
+        }
+        // 创建临时订单
+        $res = Db::table('order_temporary')->insertAll($data['TemporaryOrderData']);
+        if (!$res) {
+            return error(304, '创建订单失败', null);
+        }
+
+        $this->SubInventory($data['TemporaryOrderData']);
+        // 反馈 数据给前端调用 支付
+        $payment = new Payment();
+        $prepayData = $payment->payConfig($prepay_id)->getData();
+        $prepayData['notofyurl'] = $Weixin['notify_url'] . 'errorNotifyBath/' . $data['out_trade_no'];
+//        $prepayData['notofyurl'] = $notify_url;
+        \think\facade\Queue::later(60, 'app\job\OrderBatchPayment@Task1', ['out_trade_no' => $data['out_trade_no']], null);
+
+        return json($prepayData);
+    }
+
+    // 立即下单购买 并返回前端调用jsdk 所需的参数
+    public function BuyNow()
+    {
+        $data = $this->CreateTemporaryOrder();
+        return $this->SubmitOrder($data,'123456');
+    }
+
+    // 批量减库存 创建订单 并减去库存
+    private function SubInventory($TemporaryOrderData)
+    {
+        foreach ($TemporaryOrderData as $item) {
+            $type = $item['cart_type'] == '1' ? 'clue' : 'clue_old';
+            Db::table($type)
+                ->where('clue_id', $item['clue_id'])
+                ->save(['Tosell' => Db::raw('Tosell+' . $item['buy_num'])]);
+        }
+    }
+
+
+    /**
+     * 批量购买支付成功后返回状态
+     * @param $name string 订单号
+     * @return
+     */
+    public function notifyBatch($name)
+    {
+        $post = Request::post();
+        $AesUtil = new AesUtil();
+        $row = $AesUtil->decryptToString($post['resource']['associated_data'], $post['resource']['nonce'], $post['resource']['ciphertext']);
+        $row = json_decode($row, true);
+        trace($row);
+        $res = Db::table('order_temporary')->where('out_trade_no', $name)->select();
+        $order = new \app\model\Order();
+        $insertData = [];
+        foreach ($res as $item) {
+            //  支付成功后需要将所有的数据更改为已修改状态 避免超时任务再次修改
+            Db::table('order_temporary')->where([['clue_id', '=', $item['clue_id']], ['out_trade_no', '=', $name]])->save(['state' => 1]);
+            $rif = $order->where([['clue_id', '=', $item['clue_id']], ['out_trade_no', '=', $name]])->find();
+            if ($rif) continue;
+            $insertData[] = [
+                'out_trade_no' => $name,
+                'clue_id' => $item['clue_id'],
+                'openid' => $row['payer']['openid'],
+                'buy_num' => 1,
+                'price' => $item['price'],
+                'payment_time' => date("Y-m-d H:i:s"),
+                'flat' => 1,
+                'up_openid' => $item['up_openid'],
+                'transaction_id' => $row['transaction_id'],
+                'cart_type' => $item['cart_type'],
+            ];
+        }
+        $res = $order->insertAll($insertData);
+        if($row['attach'] == 'cart'){
+            Db::table('shop_cart')->where('openid',$row['payer']['openid'])->delete();
+        }
+
+        if ($res) {
+            return json_encode([
+                "code" => "SUCCESS",
+                "message" => "成功"
+            ]);
+        }
+    }
+
+    // 支付失败的时候，调用，修改状态 前端
+    public function errorNotifyBath($name)
+    {
+        $res = Db::table('order_temporary')->where([['out_trade_no', '=', $name], ['state', '=', 0]])->select()->toArray();
+        if ($res) {
+            foreach ($res as $item) {
+                $type = $item['cart_type'] == '1' ? 'clue' : 'clue_old';
+                Db::table($type)->where('clue_id', $item['clue_id'])->save(['Tosell' => Db::raw('Tosell-' . $item['buy_num'])]);
+                Db::table('order_temporary')->where([['clue_id', '=', $item['clue_id']], ['out_trade_no', '=', $item['out_trade_no']]])
+                    ->save(['state' => 1]);
+            }
+        }
+        try {
+            (new Payment())->closeOutTradeNo($name);
+        } catch (\Exception $e) {
+            trace($e->getMessage());
+        }
+    }
+
+
+    // 批量购买条件 拼接 sql
+    public function BulkbuyingWhere()
+    {
+        $post = Request::post();
+        $token = decodeToken();
+
+        $where = " a.flag = 1 AND Tosell < sales AND a.openid != '$token->id'";
+
+        // 汽车类型
+        !empty($post['cartType']) ? $where .= " AND cart_type = ${post['cartType']}" : $where .= " AND cart_type = 1";
+
+        // 城市数据
+        if (!empty($post['cityId'])) {
+            $cityStr = implode("','", $post['cityId']);
+            $where .= " AND a.cityID in ('$cityStr')";
+        }
+
+        // 品牌数据
+        if (!empty($post['brandId'])) {
+            $cityStr = implode("','", $post['brandId']);
+            $where .= " AND a.CartBrandID  in ('$cityStr') ";
+        }
+
+        // 最低价格
+        if (!empty($post['minPric'])) $where .= " AND unitPrice_1 >= '${post['minPric']}'";
+        // 最高价格
+        if (!empty($post['maxPric'])) $where .= " AND unitPrice_1 <= '${post['maxPric']}'";
+
+        // 时间范围
+        if (!empty($post['activeDate'])) {
+            $date = explode(' - ', $post['activeDate']);
+            $where .= " AND a.createtime BETWEEN '$date[0]' AND '$date[1]'";
+        }
+        return $where;
     }
 
 

@@ -35,7 +35,7 @@ class Templatelibrary extends BaseController
 
     function template_one(array $user)
     {
-        $date =  date("Y-m-d");
+        $date = date("Y-m-d");
         $sex = $user['sex'] == 1 ? '先生' : '女士';
         $updata = [
             'touser' => $user['openid'],
@@ -43,7 +43,7 @@ class Templatelibrary extends BaseController
             'appid' => $this->weixin['appid'],
             "url" => $this->weixin['Cline_url'],
             "data" => [
-                "thing1" => ["value" => $user['user_name'].$sex],
+                "thing1" => ["value" => $user['user_name'] . $sex . "【${user['province']}.${user['city']}】"],
                 "thing2" => ["value" => "【" . $user['car'] . "】"],
                 "thing3" => ["value" => $user['phone_number']],
                 "time4" => ["value" => $date],
@@ -70,7 +70,7 @@ class Templatelibrary extends BaseController
             "url" => $this->weixin['Cline_url'],
             "data" => [
                 "first" => '最新线索通知',
-                "name" => ["value" => $user['user_name'] . $sex],
+                "name" => ["value" => $user['user_name'] . $sex . "【${user['province']}.${user['city']}】"],
                 "sex" => ["value" => $sex],
                 "tel" => ["value" => $user['phone_number']],
                 "remark" => ["value" => $user['user_name'] . $sex . "最近有购车意向，请留意此线索。发布于：" . $date],
@@ -80,5 +80,4 @@ class Templatelibrary extends BaseController
         return $code_res->body;
     }
 
-//13881754059
 }

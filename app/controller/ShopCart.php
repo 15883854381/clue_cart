@@ -116,7 +116,7 @@ class ShopCart extends BaseController
         $out_trade_no = ordernum();//订单号
         $sql = " SELECT b.openid,a.clue_id,cart_type,
                 (CASE Tosell WHEN 0 THEN unitPrice_1  WHEN 1 THEN unitPrice_2 ELSE unitPrice_3 END) as price FROM shop_cart a 
-                LEFT JOIN clue b ON a.clue_id = b.clue_id WHERE Tosell < sales";
+                LEFT JOIN clue b ON a.clue_id = b.clue_id WHERE Tosell < sales  AND a.openid = '$token->id'";
         $res = Db::query($sql);
         $TemporaryOrderData = [];
         $total = 0;

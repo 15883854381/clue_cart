@@ -33,7 +33,11 @@ class WeiXinUlits extends BaseController
             $province_id = (string)$user[0]['province_id'];
             $wheres .= "  AND provinceID = ${province_id}  ";
         }
-        $sql = "SELECT CONCAT_WS('****',substring(phone_number, 1, 3),substring(phone_number, 8, 4)) as phone_number,user_name,sex,name as car,openid FROM clue  LEFT JOIN t_car_brand ON clue.CartBrandID = t_car_brand.id $wheres  ORDER BY RAND() LIMIT 1 ";
+        $sql = "SELECT CONCAT_WS('****',substring(phone_number, 1, 3),substring(phone_number, 8, 4)) as phone_number,user_name,sex,name as car,openid,city,province
+                FROM clue a
+                LEFT JOIN t_car_brand ON a.CartBrandID = t_car_brand.id 
+                LEFT JOIN (SELECT t_city.id,t_province.name as province,t_city.name as city  FROM t_province LEFT JOIN t_city ON t_province.id = t_city.province_id) as c ON c.id = a.cityID
+                $wheres  ORDER BY RAND() LIMIT 1 ";
         $res = Db::query($sql);
         $res[0]['openid'] = $openid;
         if(mt_rand(1, 10)>5){

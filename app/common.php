@@ -125,10 +125,15 @@ function pageData($post): array
     $pageSize = $post['pageSize'] ?? 10;
     $pageNumber = $post['pageNumber'] ?? 1;
     $pageCount = ($pageNumber - 1) * $pageSize;
-    return ['pageSize'=> $pageSize, 'pageCount' => $pageCount];
+    return ['pageSize' => $pageSize, 'pageCount' => $pageCount];
 }
 
 
+// 判断文件夹是否存在，不存在则创建文件夹
+function mkFolder($path)
+{
+    if (!is_readable($path)) is_file($path) or mkdir($path, 0700, true);
+}
 
 
 

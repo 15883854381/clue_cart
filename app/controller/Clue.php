@@ -4,6 +4,8 @@ namespace app\controller;
 
 use app\BaseController;
 use EasyTask\Queue;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use Ramsey\Uuid\Uuid;
 use think\db\Where;
 use think\facade\Config;
@@ -592,7 +594,7 @@ class Clue extends BaseController
     }
 
 //    提交订单
-    public function SubmitOrder($data,$attach='123')
+    public function SubmitOrder($data, $attach = '123')
     {
         $Weixin = Config::get('WeixinConfig.Weixin');
 //        $data = $this->CreateTemporaryOrder();
@@ -632,7 +634,7 @@ class Clue extends BaseController
     public function BuyNow()
     {
         $data = $this->CreateTemporaryOrder();
-        return $this->SubmitOrder($data,'123456');
+        return $this->SubmitOrder($data, '123456');
     }
 
     // 批量减库存 创建订单 并减去库存
@@ -681,8 +683,8 @@ class Clue extends BaseController
             ];
         }
         $res = $order->insertAll($insertData);
-        if($row['attach'] == 'cart'){
-            Db::table('shop_cart')->where('openid',$row['payer']['openid'])->delete();
+        if ($row['attach'] == 'cart') {
+            Db::table('shop_cart')->where('openid', $row['payer']['openid'])->delete();
         }
 
         if ($res) {
@@ -747,6 +749,46 @@ class Clue extends BaseController
             $where .= " AND a.createtime BETWEEN '$date[0]' AND '$date[1]'";
         }
         return $where;
+    }
+
+    // 下载订单链接
+    function DownFileExcelClue()
+    {
+        $token = decodeToken();
+
+        $redis = new Redis(Config::get('cache.stores.redis'));
+        $url = $redis->get($token->id . 'FileUrl');
+        if ($url) return success(200, '文件获取成功', ['url' => $url]);
+
+        try {
+            $weixin = Config::get('WeixinConfig.Weixin');
+            $sql = "SELECT  CONCAT(user_name,IF(sex=1,'先生','女士')) as user_name,phone_number,payment_time,PhoneBelongingplace,province,city,g.name as CartBrand
+                FROM order_list o
+                LEFT JOIN clue a ON  a.clue_id = o.clue_id
+                LEFT JOIN (SELECT t_city.id,t_province.name as province,t_city.name as city  FROM t_province LEFT JOIN t_city ON t_province.id = t_city.province_id) as c ON c.id = a.cityID
+                LEFT JOIN t_car_brand g ON a.CartBrandID = g.id
+                WHERE o.flat = 1 AND o.openid = '$token->id'";
+            $res = Db::query($sql);
+            if (!$res) {
+                return error(304, '没有数据', null);
+            }
+            $objExcel = new Spreadsheet();
+            $objWriter = IOFactory::createWriter($objExcel, 'Xlsx');
+            $objActSheet = $objExcel->getActiveSheet(0);
+            $objActSheet->setTitle('线索');
+            $key = ['姓名', '电话', '下单时间', '号码归属地', '省份', '城市', '意向品牌'];
+            array_unshift($res, $key);
+            $objActSheet->fromArray($res);
+            $media = dirname(dirname(__DIR__)) . '/public/storage/userExcel/' . date('Ymd') . '/';
+            mkFolder($media);
+            $fileName = time() . '.xlsx';
+            $fileDownFile = $weixin['notify_url'] . 'storage/userExcel/' . date('Ymd') . '/' . $fileName;
+            $objWriter->save($media . $fileName);
+            $redis->set($token->id . 'FileUrl', $fileDownFile, 300);
+            return success(200, '文件获取成功', ['url' => $fileDownFile]);
+        } catch (\Exception $e) {
+            return error(304, '文件获取成功', null);
+        }
     }
 
 

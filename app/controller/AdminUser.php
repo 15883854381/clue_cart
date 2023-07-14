@@ -91,9 +91,9 @@ class AdminUser extends BaseController
         $updata['authority'] = $post['type'] == 2 ? 6 : 8; // 此处修改用户角色 目前只有 2个角色
 
         $res = $user->where('openid', $post['openid'])->update($updata);
-        if (!$res) {
+        if ($res === false) {
             if (!empty($upProcess['img'])) unlink(root_path() . 'public/storage/' . $upProcess['img']);
-            return error(304, '修改失败', null);
+            return error(304, '修改失败1', null);
         } else {
             return success(200, '修改成功', null);
         }

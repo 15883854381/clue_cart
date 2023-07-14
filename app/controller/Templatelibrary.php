@@ -41,7 +41,7 @@ class Templatelibrary extends BaseController
             'touser' => $user['openid'],
             'template_id' => '-Jv0Adc4A5cyiCNq0fPmJb8d_qeY_sYUlc4SM_T_-xU',
             'appid' => $this->weixin['appid'],
-            "url" => $this->weixin['Cline_url'],
+            "url" => $this->weixin['Cline_url']."#/list_Business_Detail?type=${user['cart_type']}&clue_id=${user['clue_id']}",
             "data" => [
                 "thing1" => ["value" => $user['user_name'] . $sex . "【${user['province']}.${user['city']}】"],
                 "thing2" => ["value" => "【" . $user['car'] . "】"],

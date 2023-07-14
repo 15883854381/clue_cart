@@ -180,28 +180,24 @@ class Clue extends BaseController
         if ($token) {
             $BuyOrder = $order->where([['clue_id', '=', $post['clue_id']], ['openid', '=', $token->id], ['flat', 'in', [1, 3, 5, 6]]])->find();
         }
+        // 判断是否分享者是否购买了线索，分享者如果购买了则可以看
+        if(Request::has('userid','post')){
+            $order = new \app\model\Order();
+            $uRes =  $order->where([['openid','=',$post['userid']],['clue_id','=',$post['clue_id']]])->find();
+            if($uRes){
+                $res = $clue->CluePhone($post['clue_id'], $post['type']);
+                $res[0]['flat'] = 1;
+                return success(200, '查询成功', $res);
+            }
+        }
 
+        // 查询是否购买了线索
         if ($BuyOrder) {
             $res = $clue->CluePhone($post['clue_id'], $post['type']);
             $res[0]['flat'] = $BuyOrder['flat'];
         } else {
             $res = $clue->ClueNotPhone($post['clue_id'], $post['type']);
         }
-
-
-//        if (isset($BuyOrder['flat'])) {
-//
-//            $ifData = [1, 3, 5, 6];
-//
-//            if (in_array($BuyOrder['flat'], $ifData)) {
-//                $res = $clue->CluePhone($post['clue_id'], $post['type']);
-//            } else {
-//                $res = $clue->ClueNotPhone($post['clue_id'], $post['type']);
-//            }
-//            $res[0]['flat'] = $BuyOrder['flat'];
-//        } else {
-//            $res = $clue->ClueNotPhone($post['clue_id'], $post['type']);
-//        }
 
         $clue_id = $post['clue_id'];
         $tags_sql = "SELECT tagName FROM tagsmap a LEFT JOIN tags b ON a.tags_id = b.id WHERE clue_id = '${clue_id}'";

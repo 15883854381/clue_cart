@@ -33,7 +33,7 @@ class WeiXinUlits extends BaseController
             $province_id = (string)$user[0]['province_id'];
             $wheres .= "  AND provinceID = ${province_id}  ";
         }
-        $sql = "SELECT CONCAT_WS('****',substring(phone_number, 1, 3),substring(phone_number, 8, 4)) as phone_number,user_name,sex,name as car,openid,city,province
+        $sql = "SELECT CONCAT_WS('****',substring(phone_number, 1, 3),substring(phone_number, 8, 4)) as phone_number,user_name,sex,name as car,openid,city,province,a.clue_id,a.cart_type
                 FROM clue a
                 LEFT JOIN t_car_brand ON a.CartBrandID = t_car_brand.id 
                 LEFT JOIN (SELECT t_city.id,t_province.name as province,t_city.name as city  FROM t_province LEFT JOIN t_city ON t_province.id = t_city.province_id) as c ON c.id = a.cityID
@@ -45,7 +45,6 @@ class WeiXinUlits extends BaseController
         }else{
             $ulit->template_two($res[0]);
         }
-
 
     }
 

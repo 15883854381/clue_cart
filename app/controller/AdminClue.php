@@ -5,6 +5,7 @@ namespace app\controller;
 use app\BaseController;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Ramsey\Uuid\Uuid;
+use think\console\command\make\Model;
 use think\facade\Config;
 use think\facade\Db;
 use think\facade\Request;
@@ -48,7 +49,6 @@ class AdminClue extends BaseController
         return success(200, '查询成功', ['count' => ($newCartcount + $oldCartCount), 'data' => $res]);
 
     }
-
 
     // 获取线索总数量
     function ClueCount()
@@ -157,7 +157,7 @@ class AdminClue extends BaseController
             return array('code' => 1, 'mes' => '该手机号码已存在', 'data' => $item);
         }
 
-        if(empty($item['cart_type'])){
+        if (empty($item['cart_type'])) {
             return array('code' => 1, 'mes' => '没有定义线索类型 1 表示新车  2 表示二手车', 'data' => $item);
         }
 
@@ -309,7 +309,6 @@ class AdminClue extends BaseController
         return success(200, '上传成功', $res);
     }
 
-
     // 获取城市 和 品牌的id
     private function CityOrBrand($buyCarCity, $carBrand)
     {
@@ -333,7 +332,6 @@ class AdminClue extends BaseController
 
         return $data;
     }
-
 
     // 解析excel 数据
     function ReadExcel($file)
@@ -377,7 +375,6 @@ class AdminClue extends BaseController
         }
         return $data;
     }
-
 
     // 线索均分 给客服
     function Clue_allocation()
@@ -441,7 +438,6 @@ class AdminClue extends BaseController
 
 
     }
-
 
     // 外呼线索列表 ========================
 
@@ -514,13 +510,6 @@ class AdminClue extends BaseController
             Log::error($e->getMessage());
         }
     }
-
-    // 线索详情
-    function Clue_Item_Detail()
-    {
-
-    }
-
 
     // 批量上传时，数据不完善 客服审核时 完善线索数据
     function EditClueData()
@@ -698,7 +687,6 @@ class AdminClue extends BaseController
         return success(200, '修改成功', $downArr);
     }
 
-
     // 定时任务修改
     public function timingEdit()
     {
@@ -755,6 +743,53 @@ class AdminClue extends BaseController
         }
 
 
+    }
+
+
+    // 批量审核
+    public function Batchaudi()
+    {
+        if (!Request::has('upUserOpenid', 'post')) {
+            return error(304, '参数错误', null);
+        }
+        if (!Request::has('startTime', 'post')) {
+            return error(304, '参数错误', null);
+        }
+        if (!Request::has('endTime', 'post')) {
+            return error(304, '参数错误', null);
+        }
+        $post = Request::post();
+        switch ($post['flag']) {
+            case 0:
+                $sql = "UPDATE clue a
+                            LEFT JOIN notifyurl b ON a.clue_id = b.out_trade_no
+                            SET a.flag = 0
+                        WHERE 	(record_file_url IS NULL or  record_file_url ='')
+                            AND a.openid='${post['upUserOpenid']}' 
+                            AND a.flag = 2
+                            AND a.createtime BETWEEN '${post['startTime']}' AND '${post['endTime']}' ";
+                break;
+            case 1:
+                $sql = "UPDATE clue a
+                            LEFT JOIN notifyurl b ON a.clue_id = b.out_trade_no 
+                            SET a.flag = 4 
+                        WHERE
+	                        record_file_url != '' 
+	                        AND record_file_url IS NOT NULL 
+	                        AND a.openid ='${post['upUserOpenid']}'
+                            AND (user_name is not null and user_name != '') 
+	                        AND (a.cityID is not NUll AND a.cityID !='')
+	                        AND (a.provinceID is not NUll AND a.provinceID !='')
+	                        AND (a.CartBrandID is not NUll AND a.CartBrandID !='')
+                            AND a.flag = 2
+	                        AND a.createtime BETWEEN '${post['startTime']}' AND '${post['endTime']}'";
+                break;
+        }
+        $res = Db::execute($sql);
+        if (!$res) {
+            return success(304, '审核失败', null);
+        }
+        return success(200, '获取成功', $res);
     }
 
 
